@@ -18,6 +18,8 @@
 #include <QDebug>
 #include <QGraphicsSceneMouseEvent>
 #include <QTableWidget>
+#include <QCheckBox>
+#include <QRadioButton>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -49,10 +51,12 @@ class CustomScene : public QGraphicsScene
 	void selectPointOnScene();
 	void finishSelectingPoints();
 	void removeLastSelectedPoint();
+	void selectMovedPoint();
 
 protected:
 	void mousePressEvent(QGraphicsSceneMouseEvent *event)
 	{
+		
 		qDebug() << "Custom scene clicked.";
 		QGraphicsScene::mousePressEvent(event);
 		if (!event->isAccepted() && event->button() == Qt::LeftButton) {
@@ -71,6 +75,9 @@ protected:
 		else if (!event->isAccepted() && event->button() == Qt::RightButton) {
 			
 				qDebug() << "Custom scene RIGHT clicked.";
+				QPointF pt = event->scenePos();
+				m_pickedPoint.setX(pt.x());
+				m_pickedPoint.setY(pt.y());
 				emit removeLastSelectedPoint();
 			
 		}
@@ -81,17 +88,36 @@ protected:
 		std::cout << "DOUBLE CLICKED \n";
 		emit finishSelectingPoints();
 	}
+	void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override{
+		//if (event->type() == QGraphicsSceneMouseEvent::MouseMove)
+		
+		QPointF pt = event->scenePos();
+		m_currentMovedPoint.setX(pt.x());
+		m_currentMovedPoint.setY(pt.y());
+	//	qDebug() << "MOVE EVENT !!!!";
+	//	std::cout << m_currentMovedPoint.x() << "   " << m_currentMovedPoint.y() << std::endl;
+		emit selectMovedPoint();
+		//emit removeLastSelectedPoint();
+
+	}
 public:
 
 	QPoint transferPickedPointsPosition()
 	{
 		return m_pickedPoint;
 	}
+
+	QPoint transferMovedPointsPosition()
+	{
+		return m_currentMovedPoint;
+	}
+
 private:
 	void joinCloseRects();
 	bool isRectsIntersecting();
 private:
 	QPoint m_pickedPoint;
+	QPoint m_currentMovedPoint;
 
 
 };
@@ -119,10 +145,17 @@ public slots:
 	void mousePressEvent(QGraphicsSceneMouseEvent* e);
 	void getSelectedPoints();
 	void drawPolygonFromSelectedPoints();
+	void dbmShowingSlot();
+	void sinrShowingSlot();
+
+	void drawHeightMapValue();
 	void coloringOfSelectedPolygonSlot();
 	void coloringOfSelectedWalls();
 	void removingSelectedPointsSlot();
 	void onRemoveLastSelectedPoint();
+	void switchComponentType(const QString& compName);
+	void writeHeightMapPointsDataSlot();
+	void drawHeightMapContourSlot();
 
 
 public:
@@ -133,6 +166,19 @@ public:
 
 protected:
 	bool eventFilter(QEvent *event);
+//	bool eventFilter(QObject * obj, QEvent * ev);
+//	void mouseMoveEvent(QMouseEvent* event);
+
+
+public:
+	const wchar_t *GetWC(const char *c);
+	void callPythonFunction(/*const std::vector<int>& imageSizes*/);
+	bool parseHeightMapTxtFile(cv::Mat& resHeightMap, cv::Mat& resSINRMat);
+	void findOuterContour(const cv::Mat& inputMaskImg, cv::Mat& resImg);
+
+	PyObject* m_pModule;
+	PyObject* m_pFunc;
+//	bool m_isPythonModuleInitialized;
 
 private:
 	Ui::FloorPlanSegmentationGuiClass ui;
@@ -151,15 +197,29 @@ private:
 	QPushButton* m_selectImageButton;
 	QPushButton* m_runSegmentationButton;
 	QPushButton* m_runHeightMapGenerationButton;
+	QPushButton* m_applyHeightMapData;
+	QPushButton* m_showHeightMapImageButton;
 	QString m_selectedImagePath;
 	QImage m_image;
+	cv::Mat m_heightMapImage;
+	cv::Mat m_contourImage;
 	cv::Mat m_cvImage;
 	QPolygonF m_poly;
 	QComboBox * m_roomColorComboBox;
 	QComboBox* m_roomTypeComboBoBox;
+	bool m_isDbmBoxChecked;
+	bool m_isSinrBoxChecked;
+	QCheckBox* m_DbmShowingButton;
+	QCheckBox* m_SinrShowingButton;
+	QCheckBox* m_contourShowingButton;
+	QGraphicsRectItem*  m_graphicsRectItem;
 	std::vector<QGraphicsEllipseItem*> m_elipseItemsVec;
+	QGraphicsTextItem* m_graphicsTextItem;
 	//QGraphicsPolygonItem
 	std::vector<QPointF> m_elipseItemsVecMain;
+	std::vector<std::pair<cv::Point, cv::Point>> m_pointsVecForHeightMap;
+	int m_countOfHeightMapPoints;
+	cv::FileStorage m_fs;
 
 
 	int m_indexOfPolygonPoint;

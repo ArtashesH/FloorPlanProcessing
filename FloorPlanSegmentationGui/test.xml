@@ -1,18 +1,19 @@
 <?xml version="1.0"?>
 <opencv_storage>
-<vector0>
-  <x0>10</x0>
-  <y0>20</y0>
-  <x1>10</x1>
-  <y1>50</y1></vector0>
-<vector1>
-  <x0>50</x0>
-  <y0>50</y0>
-  <x1>100</x1>
-  <y1>50</y1></vector1>
-<vector2>
-  <x0>150</x0>
-  <y0>150</y0>
-  <x1>200</x1>
-  <y1>200</y1></vector2>
+<data>
+  <vector>
+    <x>10</x>
+    <y>20</y>
+    <x>10</x>
+    <y>50</y></vector>
+  <vector>
+    <x>50</x>
+    <y>50</y>
+    <x>100</x>
+    <y>50</y></vector>
+  <vector>
+    <x>150</x>
+    <y>150</y>
+    <x>200</x>
+    <y>200</y></vector></data>
 </opencv_storage>

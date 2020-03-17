@@ -5,12 +5,23 @@ Ray Tracing for wireless channel propogation
 @author: Mohammed Hirzallah, 2019
 """
 
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
 
-
-
+import scipy.io as sio
 import numpy as np
 import math
-import matplotlib.pyplot as plt
+import re
+#import matplotlib.pyplot as plt
+
+
+
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
+
+
+
 from mpl_toolkits import mplot3d
 from scipy.ndimage import gaussian_filter
 from scipy.stats import norm
@@ -21,6 +32,268 @@ from skimage.draw import line_aa
 from skimage.draw import polygon
 from PIL import Image
 import cv2
+
+
+def findMaximumValueIndexFromArray(inputArray):
+    if len(inputArray) == 0:
+        return -1
+    indexOfMaximumEl = -1
+    tmpMaximumEl = -90
+    for i in range(0,len(inputArray)):
+        if 	inputArray[i] >= tmpMaximumEl:
+            tmpMaximumEl = inputArray[i]                            
+            indexOfMaximumEl = i
+    return indexOfMaximumEl
+
+
+def findMaximumElementOfMat(inputMat, countOfRows,countOfCols):
+    maximumElement = -90
+    fileArrayTxtFile = open("myfileNew.txt","w")	
+    for i in range(countOfRows):
+        for j in range(countOfCols):
+            if maximumElement < inputMat[i,j]:
+                maximumElement = inputMat[i,j]
+                #print(
+            fileArrayTxtFile.write(str(inputMat[i,j]))
+            fileArrayTxtFile.write("\n")
+    fileArrayTxtFile.close()
+    return maximumElement
+	
+	
+	
+def SINR_dbCalculationFunction(arrayOfDbsFromPoint):
+    maxDbmValueIndex = findMaximumValueIndexFromArray(arrayOfDbsFromPoint) 
+ #   print("After Max Value SINR")
+  #  print(arrayOfDbsFromPoint[maxDbmValueIndex])
+    if maxDbmValueIndex == -1:
+        return 0
+    maxDbmValue = arrayOfDbsFromPoint[maxDbmValueIndex]
+    currentMvValuesArray = []
+   
+    sumOfMvValues = 0
+    for i in range(len(arrayOfDbsFromPoint)):
+        tmpMvValue = math.pow(10,(arrayOfDbsFromPoint[i]/10))
+      #  print("TMP Sinrs" )
+      #  print(tmpMvValue)
+        #tmpMvValue = 10 * (arrayOfDbsFromPoint[i]/10)
+        #currentMvValuesArray.append(tmpMvValue)
+        if i != maxDbmValueIndex:        
+            sumOfMvValues += tmpMvValue
+   
+    noiseVal = math.pow(10,-90/10)
+    sumOfMvValues += noiseVal
+  #  print("Noise value")
+  #  print(noiseVal)	
+   # noiseVal =  10 * (-90/10)
+  #  print(arrayOfDbsFromPoint[maxDbmValueIndex])     
+    bestMvValue =  math.pow(10,(arrayOfDbsFromPoint[maxDbmValueIndex]/10))
+ #   print("best sinr")
+  #  print(bestMvValue)
+   # bestMvValue = 10 * (arrayOfDbsFromPoint[maxDbmValueIndex]/10)
+   # print(bestMvValue)
+    sinrMv = bestMvValue / sumOfMvValues   
+   # sinrMv = bestMvValue / (sumOfMvValues + noiseVal)
+   
+    sinrDbm = 10*(math.log10(sinrMv))	 
+   # print(sinrMv)
+    return sinrDbm
+	
+	
+	
+	
+def createColoredImageWithSINR( finalMapSINR,countOfRows,countOfCols):
+    rfMapFull = np.ones((int(countOfRows),int(countOfCols)),np.int)
+    imgRes = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1] +150, 3 ) ) 
+	
+    print("Before for sinr")
+    print(countOfRows)
+    print(countOfCols)
+    for i in range(countOfRows):
+        for  j in range(countOfCols):
+            #print("inside for sinr")
+            if finalMapSINR[i,j] < - 20:
+                imgRes[i,j,0] = 1
+                imgRes[i,j,1 ] = 77
+                imgRes[i,j,2] = 254
+            elif finalMapSINR[i,j] >= -20 and finalMapSINR[i,j] < -5:
+                imgRes[i,j,0] = 16
+                imgRes[i,j,1] = 133
+                imgRes[i,j,2] = 239		
+            elif finalMapSINR[i,j] >=-5 and finalMapSINR[i,j] < 0:
+                imgRes[i,j,0] = 39
+                imgRes[i,j,1] = 181
+                imgRes[i,j,2] = 216
+            elif finalMapSINR[i,j] >=  0 and  finalMapSINR[i,j] < 5:
+                imgRes[i,j,0] = 0
+                imgRes[i,j,1] = 255
+                imgRes[i,j,2] = 249
+            elif finalMapSINR[i,j] >= 5 and finalMapSINR[i,j] < 20:
+                imgRes[i,j,0] = 146
+                imgRes[i,j,1] = 255
+                imgRes[i,j,2] = 140
+            elif finalMapSINR[i,j] >= 20 and finalMapSINR[i,j] < 50:
+                imgRes[i,j,0] = 21
+                imgRes[i,j,1] = 255
+                imgRes[i,j,2] = 9
+            
+            elif finalMapSINR[i,j] >= 50 and finalMapSINR[i,j] < 80:
+                imgRes[i,j,0] = 7
+                imgRes[i,j,1] = 147
+                imgRes[i,j,2]= 0
+            
+            elif finalMapSINR[i,j] >= 80 and finalMapSINR[i,j] < 120:
+                imgRes[i,j,0] = 251
+                imgRes[i,j,1] = 68
+                imgRes[i,j,2] = 78
+				
+            elif finalMapSINR[i,j] >= 120 and finalMapSINR[i,j] < 150:
+                imgRes[i,j,0] = 226
+                imgRes[i,j,1] = 5
+                imgRes[i,j,2] = 16
+            elif finalMapSINR[i,j] >= 150 and finalMapSINR[i,j] < 180:
+                imgRes[i,j,0] = 137
+                imgRes[i,j,1] = 3
+                imgRes[i,j,2] = 10
+            else:
+                imgRes[i,j,0] = 255
+                imgRes[i,j,1] = 255
+                imgRes[i,j,2] = 255 
+				
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(countOfRows/35)),(countOfCols + 50, int(2*countOfRows / 35)),(1,77,254),-1)
+    cv2.putText(imgRes,"< -20DB",(countOfCols + 5 ,int(3*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(4*countOfRows/35)),(countOfCols + 50, int(5*countOfRows / 35)),(16,133,239),-1)
+    cv2.putText(imgRes,">= -20DB  < -5DB",(countOfCols + 5 ,int(6*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(7*countOfRows/35)),(countOfCols + 50, int(8*countOfRows / 35)),(39,181,216),-1)
+    cv2.putText(imgRes,">= -5DB  < 0DB",(countOfCols + 5 ,int(9*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(10*countOfRows/35)),(countOfCols + 50, int(11*countOfRows / 35)),(0,255,249),-1)
+    cv2.putText(imgRes,">= 0DB  < 5DB",(countOfCols + 5 ,int(12*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(13*countOfRows/35)),(countOfCols + 50, int(14*countOfRows / 35)),(146,255,140),-1)
+    cv2.putText(imgRes,">= 5DB  < 20DB",(countOfCols + 5 ,int(15*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(16*countOfRows/35)),(countOfCols + 50, int(17*countOfRows / 35)),(21,255,9),-1)
+    cv2.putText(imgRes,">= 20DB  < 50DB",(countOfCols + 5 ,int(18*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(19*countOfRows/35)),(countOfCols + 50, int(20*countOfRows / 35)),(7,147,0),-1)
+    cv2.putText(imgRes,">= 50DB  < 80DB",(countOfCols + 5 ,int(21*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(22*countOfRows/35)),(countOfCols + 50, int(23*countOfRows / 35)),(251,68,78),-1)
+    cv2.putText(imgRes,">= 80DB  < 120DB",(countOfCols + 5 ,int(24*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(25*countOfRows/35)),(countOfCols + 50, int(26*countOfRows / 35)),(226,5,16),-1)
+    cv2.putText(imgRes,">= 120DB  < 150DB",(countOfCols + 5 ,int(27*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(28*countOfRows/35)),(countOfCols + 50, int(29*countOfRows / 35)),(137,3,10),-1)
+    cv2.putText(imgRes,">= 150DB  < 180DB",(countOfCols + 5 ,int(30*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+    imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(31*countOfRows/35)),(countOfCols + 50, int(32*countOfRows / 35)),(255,255,255),-1)
+    cv2.putText(imgRes,">= 180DB",(countOfCols + 5 ,int(33*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
+	
+   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 ,int(4*countOfRows / 20) ),(countOfCols + 50,  int(5*countOfRows / 20)),(39,127,255),-1)
+   # cv2.putText(imgResFinal,"<= -20Dbm > -35Dbm",(countOfCols + 5 ,int(6*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 ,int(7*countOfRows / 20) ),(countOfCols + 50,  int(8*countOfRows / 20)),(0,255,255),-1)
+   # cv2.putText(imgResFinal,"<= -35Dbm > -47Dbm",(countOfCols + 5 ,int(9*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(10*countOfRows / 20)),(countOfCols + 50,  int(11*countOfRows / 20)),(0,255,128),-1)
+   # cv2.putText(imgResFinal,"<= -47Dbm > -60Dbm",(countOfCols + 5 ,int(12*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(13*countOfRows / 20)),(countOfCols + 50,  int(14*countOfRows / 20)),(0,128,0),-1)
+   # cv2.putText(imgResFinal,"<= -60Dbm > -73Dbm",(countOfCols + 5 ,int(15*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+    
+   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(16*countOfRows / 20)),(countOfCols + 50,  int(17*countOfRows / 20)),(255,0,0),-1)
+   # cv2.putText(imgResFinal,"<= -73Dbm > -90Dbm",(countOfCols + 5 ,int(18*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+    
+    return imgRes				
+    	
+def coloringOfSignalAreas(finalRfMap, countOfRows, countOfCols):
+    rfMapFull = np.ones((int(countOfRows),int(countOfCols)),np.int)
+    imgRes = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1], 3 ) )
+    for i in range(countOfRows):
+        for j in range(countOfCols):
+            imgRes[i,j,0] = 223
+            imgRes[i,j,1] = 156
+            imgRes[i,j,2] = 150
+    #imgRes = np.zeros( (countOfRows, countOfCols), dtype = int) 
+    print("Start function color area detection ")
+    print(countOfRows)
+    print(countOfCols)
+    for i in range(countOfRows):
+        for j in range(countOfCols):
+          #  print("Insode loop ")
+            if finalRfMap[i,j] > -20: 
+                imgRes[i,j,2] = 255
+                imgRes[i,j,0] = 0
+                imgRes[i,j,1] = 0
+            if finalRfMap[i,j] <= -20 and finalRfMap[i,j] > -35:
+              # imgRes[i,j,0] = 255
+              #  imgRes[i,j,1] = 128
+              #  imgRes[i,j,2] = 0
+                imgRes[i,j,0] = 39
+                imgRes[i,j,1] = 127
+                imgRes[i,j,2] = 255	
+            if finalRfMap[i,j] <= -35 and finalRfMap[i,j] > -47:
+                imgRes[i,j,0] = 0
+                imgRes[i,j,1] = 255
+                imgRes[i,j,2] = 255
+            if finalRfMap[i,j] <= -47 and finalRfMap[i,j] > -60:
+                imgRes[i,j,0] = 0
+                imgRes[i,j,1] = 255
+                imgRes[i,j,2] = 128
+            if finalRfMap[i,j] <= -60 and finalRfMap[i,j] > -73:
+                imgRes[i,j,0] = 0
+                imgRes[i,j,1] = 128
+                imgRes[i,j,2] = 0
+            if finalRfMap[i,j] <= -73 and finalRfMap[i,j] > -90:
+                imgRes[i,j,0] = 255
+                imgRes[i,j,1] = 0
+                imgRes[i,j,2] = 0
+                #imgRes[i,j,0] = 255
+                #imgRes[i,j,1] = 128
+                #imgRes[i,j,2] = 0
+            
+            #imgRes[i,j,1] = 0
+            #imgRes[i,j,2] = 255
+    print("Rectangle draw ")
+   # imgRes = cv2.rectangle(imgRes,(countOfCols - 50 , countOfRows  - 50),(countOfCols - 20, countOfRows - 20),(0,255,0),-1)
+    imgResFinal = np.ones( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1]+150, 3 ) )
+    for i in range(countOfRows):
+        for j in range(countOfCols):
+            imgResFinal[i,j,0] = imgRes[i,j,0]
+            imgResFinal[i,j,1] = imgRes[i,j,1]
+            imgResFinal[i,j,2] = imgRes[i,j,2]
+    #for i in range(countOfCols):
+	 #   i = i + countOfCols / 6 
+      #  imgRes2 = cv2.rectangle(imgRes,(countOfCols - 50 , countOfRows  - 50),(countOfCols - 20, countOfRows - 20),(0,255,0),-1)
+    imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(countOfRows/20)),(countOfCols + 50, int(2*countOfRows / 20)),(0,0,255),-1)
+    cv2.putText(imgResFinal,"> -20Dbm",(countOfCols + 5 ,int(3*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+    imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 ,int(4*countOfRows / 20) ),(countOfCols + 50,  int(5*countOfRows / 20)),(39,127,255),-1)
+    cv2.putText(imgResFinal,"<= -20Dbm > -35Dbm",(countOfCols + 5 ,int(6*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+    imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 ,int(7*countOfRows / 20) ),(countOfCols + 50,  int(8*countOfRows / 20)),(0,255,255),-1)
+    cv2.putText(imgResFinal,"<= -35Dbm > -47Dbm",(countOfCols + 5 ,int(9*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+    imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(10*countOfRows / 20)),(countOfCols + 50,  int(11*countOfRows / 20)),(0,255,128),-1)
+    cv2.putText(imgResFinal,"<= -47Dbm > -60Dbm",(countOfCols + 5 ,int(12*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+    imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(13*countOfRows / 20)),(countOfCols + 50,  int(14*countOfRows / 20)),(0,128,0),-1)
+    cv2.putText(imgResFinal,"<= -60Dbm > -73Dbm",(countOfCols + 5 ,int(15*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+	
+    
+    imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(16*countOfRows / 20)),(countOfCols + 50,  int(17*countOfRows / 20)),(255,0,0),-1)
+    cv2.putText(imgResFinal,"<= -73Dbm > -90Dbm",(countOfCols + 5 ,int(18*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
+    
+	
+	
+    
+        
+    print("coloring finished ")
+    return imgResFinal
 
 
 def FindReflectionAngle(x,y,theta,rayPowerStopThresholddB,rfMap,layout,nTrace,nPixelsX,nPixelsY,poly):
@@ -61,34 +334,6 @@ def FindReflectionAngle(x,y,theta,rayPowerStopThresholddB,rfMap,layout,nTrace,nP
     rr1,cc1 = polygon(poly[:,0], poly[:,1], rfMap.shape)
 
     val = 1
-
-
-
-
-
-
-##################OUR ADDED 
-
-
-
-#ax.vlines(x=20, ymin=200, ymax=350, linewidth=2, color='r')
-#ax.hlines(y=350, xmin=20, xmax=100, linewidth=2, color='r')
-#ax.vlines(x=100, ymin=350, ymax=550, linewidth=2, color='r')
-#ax.hlines(y=550, xmin=100, xmax=500, linewidth=2, color='r')
-#ax.vlines(x=500, ymin=400, ymax=550, linewidth=2, color='r')
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -187,11 +432,11 @@ def GenerateRay(ray,recursionIndex,x0,y0,txPrdB,theta,gain,rayPowerStopThreshold
         
     deltaDist = np.sqrt(deltaX**2 + deltaY**2)*0.25 # ray update resolution
     dist = deltaDist
-    print('ray ', ray)
-    print('txPower', txPrdB)
-    print('angle ', angle*180/np.pi)
-    print('x0 ', x0)
-    print('y0 ', y0)
+  #  print('ray ', ray)
+  #  print('txPower', txPrdB)
+  #  print('angle ', angle*180/np.pi)
+  #  print('x0 ', x0)
+  #  print('y0 ', y0)
     
     recursionIndex = recursionIndex + 1 # update the recursion index
     PtdB = txPrdB # transmit power for this ray
@@ -229,11 +474,11 @@ def GenerateRay(ray,recursionIndex,x0,y0,txPrdB,theta,gain,rayPowerStopThreshold
                 
         else: # There is wall
             stop = True # terminate ray
-            print('Wall!')
+         #   print('Wall!')
             
             # Find the reflection angle (we should check on wall geometry by checking adjacent pixels)
             reflectionAngle = FindReflectionAngle(xIndex,yIndex,angle,rayPowerStopThresholddB,rfMap,layout,nTrace,nPixelsX,nPixelsY,poly)
-            print('Reflection angle', reflectionAngle)
+         #   print('Reflection angle', reflectionAngle)
         
             
             # Ray reflection
@@ -250,31 +495,103 @@ def GenerateRay(ray,recursionIndex,x0,y0,txPrdB,theta,gain,rayPowerStopThreshold
 '''
 Main routine
 '''           
-            
-def finalFunctionHeightMap():			
+
+	
+	
+def finalFunctionHeightMap():
+    fileArrayTxtFile = open("myfile.txt","w")	
+   # testArray = [-90,-70,-80,-60]
+   # print(testArray)
+    #resSINR = SINR_dbCalculationFunction(testArray)
+   # print(resSINR)
+   # return 0
    # rayPowerStopThresholddB  = -90 # dBm
+    print("Call python function start")
+    lineImageSize = ''
+    splitImageSizeArray = []
+    
+	
+    with open('imageSize.txt') as fp:
+        lineImageSize = fp.readline()
+        splitImageSize = re.findall(r'\S+', lineImageSize)
+        splitImageSizeArray.append(splitImageSize)
+        while lineImageSize:
+            lineImageSize = fp.readline()
+            splitImageSize = re.findall(r'\S+', lineImageSize)
+            splitImageSizeArray.append(splitImageSize)
+            print(lineImageSize)
+    
+    splitImageSize = re.findall(r'\S+', lineImageSize)    
+    print(splitImageSize)
+   # for tempSize in splitImageSize:
+   #     print(tempSize)
+   # return		
  
-# Generate rays
+    tree = ET.parse('testHeightMapData.xml')
+    root = tree.getroot()
+    arrayFinal = []
+    print("retrurn")
+	
     xMin = 0 # 
-    xMax = 150 #
-    rayPowerStopThresholddB  = -150
+    xMax = 300 #
+    rayPowerStopThresholddB  = -90
     yMin = 0
-    yMax = 200
-    freq = 1.18 # channel frequency in GHz
-    nPixelsX = 600;#(xMax - xMin)/deltaX;
-    nPixelsY =  800#(yMax - yMin)/deltaY;
-    maxRecursionsPerRay = 3
-    nRays = 360
-    deltaX = .25 # Resolution in x-axis
-    deltaY = .25 # Resolution in y-axis 
+    yMax = 400
+    freq =  3.6#1.18 # channel frequency in GHz
+    nPixelsX =    int(splitImageSizeArray[0][1])#imageHeigth;#(xMax - xMin)/deltaX;
+    nPixelsY =   int(splitImageSizeArray[0][0]) #imageWidth#(yMax - yMin)/deltaY;
+    maxRecursionsPerRay = 1
+    nRays = 600
+    deltaX = 0.00025 #* distPerPixel # Resolution in x-axis
+    deltaY = 0.00025 #* distPerPixel # Resolution in y-axis 
  
  
 			
-    rfMap = rayPowerStopThresholddB*np.ones((int(nPixelsX),int(nPixelsY)),np.int) # RF MAp   
+ ######   rfMap = rayPowerStopThresholddB*np.ones((int(nPixelsX),int(nPixelsY)),np.int) # RF MAp   
     layout	= np.zeros((int(nPixelsX),int(nPixelsY))) # Roof layout
-    nTrace = np.zeros((int(nPixelsX),int(nPixelsY))) # Number of times rss computed per pixel	
+  	
 
-    img2 = np.zeros( ( np.array(rfMap).shape[0], np.array(rfMap).shape[1], 3 ) )	
+  #####  img2 = np.zeros( ( np.array(rfMap).shape[0], np.array(rfMap).shape[1], 3 ) )
+    #rr, cc = polygon(poly[:,0], poly[:,1], layout.shape)
+  #  r1 = np.array([int(nPixelsX*0.1),int(nPixelsX*0.9)])
+   # c1 = np.array([int(nPixelsY*0.1),int(nPixelsY*0.1)])
+
+    nTrace = np.zeros((int(nPixelsX),int(nPixelsY))) # Number of times rss computed per pixel
+     
+    for elem in root:
+  
+   # print(elem.text)
+        array1 = []
+        for subelem in elem:
+        #array1 = []
+            array1.append(int(subelem.text))
+	    #array1.append(12)
+      #  print(subelem.text)
+        arrayFinal.append(array1)
+    for tmpArray in arrayFinal:
+        maxValX = tmpArray[0]
+        minValX = tmpArray[2]
+        maxValY = tmpArray[1]
+        minValY = tmpArray[3]
+        if tmpArray[1] < tmpArray[3]:
+            maxValY = tmpArray[3]
+            minValY = tmpArray[1]
+        if tmpArray[2] > tmpArray[0]:
+            maxValX = tmpArray[2]
+            minValX = tmpArray[0]
+        if minValX == maxValX and minValY != maxValY:
+            layout[minValY:maxValY,minValX] = 1
+        if minValX != maxValX and minValY == maxValY:
+            layout[minValY,minValX:maxValX] = 1
+        else :			
+            layout[minValY:maxValY,minValX:maxValX] = 1
+     #   break
+       # img2 = cv2.line(img2, (tmpArray[0],tmpArray[1]), (tmpArray[2],tmpArray[3]), (0,0,255), 3) 
+       # for tmpValue in tmpArray:
+       #     print(tmpValue)
+  #  return
+# Generate rays
+	
 
     poly = np.array((
         (100, 100),
@@ -283,170 +600,188 @@ def finalFunctionHeightMap():
   #  (220, 590),
     
     ))
-    rr, cc = polygon(poly[:,0], poly[:,1], layout.shape)
-    r1 = np.array([int(nPixelsX*0.1),int(nPixelsX*0.9)])
-    c1 = np.array([int(nPixelsY*0.1),int(nPixelsY*0.1)])
-
-
-    rr1,cc1 = polygon(poly[:,0], poly[:,1], rfMap.shape)
-
-
-  #  layout[rr1,cc1] = 1
-
-    layout[50,100:300] = 1
-    layout[50,400:600] = 1
-    layout[50:300,100] = 1
 
 
 
-
-    layout[50:80,300] = 1
-    layout[120:180,300] = 1
-    layout[220:300,300] = 1
-    layout[380:400,300] = 1
-    layout[300,100:180] = 1
-    layout[300,220:300] = 1
-
-
-
-
-    layout[200,550:600] = 1
-    layout[400,470:610] = 1
-    layout[400,300:320] = 1
-    layout[200,20:100] = 1
-
-
-
-
-    layout[200:350,20] = 1
-    layout[350,20:100] = 1
-    layout[350:550,100] = 1
-    layout[550,100:500] = 1
-    layout[400:550,500] = 1
-    layout[50:400,600] = 1
-
-
-
-    txLocationX = 2*xMax/3
-    txLocationY = 1*yMax/4
-    xStart = txLocationX
-    yStart =  txLocationY
-    txPower = 73 # dBm
-    for rayId in range(nRays):
-        angle = 2*np.pi/nRays*rayId
-        gaindB = 0
-        recursion = 0
-        GenerateRay(rayId,recursion,xStart,yStart,txPower,angle,gaindB,rayPowerStopThresholddB,maxRecursionsPerRay,deltaX ,deltaY ,angle,xMin, xMax,yMin,yMax, freq, nPixelsX, nPixelsY,poly, rfMap,layout,nTrace)            
-
-
+    print("RANGE OF INDEX ")
+    print((len(splitImageSizeArray)))
+    resultImagesArray = []
+    indexOfCurrentWroteImage = 1;
+    rfMapFull = rayPowerStopThresholddB*np.ones((int(nPixelsX),int(nPixelsY)),np.int)
+    imgFullSINR = rayPowerStopThresholddB*np.ones((int(nPixelsX),int(nPixelsY)),np.float)
+    imgFullColored = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1], 3 ) )
+    maskImgHeight = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1], 1 ) )
+    tmpImage = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1], 3 ) )
+    for indexOfArray in range(len(splitImageSizeArray)-1):
+        rfMap = rayPowerStopThresholddB*np.ones((int(nPixelsX),int(nPixelsY)),np.int)
+        rfMap = rayPowerStopThresholddB*np.ones((int(nPixelsX),int(nPixelsY)),np.int) # RF MAp   
+        img2 = np.zeros( ( np.array(rfMap).shape[0], np.array(rfMap).shape[1], 3 ) )
+        print("VERY INITIAL STATE")
+        print("Inside loop ")
+        
+        txLocationX = int(splitImageSizeArray[indexOfArray][3])*deltaX# 1*xMax/6
+        txLocationY =  int(splitImageSizeArray[indexOfArray][2])*deltaY# 2*yMax/4
+        xStart = txLocationX
+        yStart =  txLocationY
+        txPower = 23 # dBm
+        
+        for rayId in range(nRays):
+            angle = 2*np.pi/nRays*rayId
+            gaindB = 0
+            recursion = 0
+            GenerateRay(rayId,recursion,xStart,yStart,txPower,angle,gaindB,rayPowerStopThresholddB,maxRecursionsPerRay,deltaX ,deltaY ,angle,xMin, xMax,yMin,yMax, freq, nPixelsX, nPixelsY,poly, rfMap,layout,nTrace)
+                                 
+                       # print("Positive values")
+                      #  print(rfMap[i,j])						
+          #  GenerateRay(rayId,recursion,xStart,yStart,txPower,angle,gaindB,rayPowerStopThresholddB,maxRecursionsPerRay,deltaX ,deltaY ,angle,xMin, xMax,yMin,yMax, freq, nPixelsX, nPixelsY,poly, rfMapFull,layout,nTrace) 			
+        print("After generate ray function ")
+       
     # Apply Guassian filter to rfMap
-    rfMap = gaussian_filter(rfMap,sigma=1)
-  
-    print('rfMap', rfMap)    
+        rfMap = gaussian_filter(rfMap,sigma=1)
+        rfMapFull = gaussian_filter(rfMapFull,sigma=1)
+        np.savetxt('textRfMap.txt',rfMap,fmt='%.2f')
+        resultImagesArray.append(rfMap)
+    ##print('rfMap', rfMap)    
+        tmpImage[:,:,0] = 100
+        tmpImage[:,:,1] = rfMap  + np.abs(np.min(rfMap))
+        tmpImage[:,:,2]  = 0
+      ####  img2[:,:,0] = 100
+      ####  img2[:,:,1] = rfMapFull  + np.abs(np.min(rfMapFull))
+      ####  img2[:,:,2] = 0
+
+        for tmpArray in arrayFinal:   
+            tmpImage = cv2.line(tmpImage, (tmpArray[0],tmpArray[1]), (tmpArray[2],tmpArray[3]), (0,0,255), 3)
+            img2 = cv2.line(img2, (tmpArray[0],tmpArray[1]), (tmpArray[2],tmpArray[3]), (0,0,255), 3)
+        finalImagePath = "testfileRes" + str(indexOfCurrentWroteImage) + ".png"
+        cv2.imwrite(finalImagePath,tmpImage)
+        indexOfCurrentWroteImage = indexOfCurrentWroteImage + 1
 
 
-
-#'''
-#Ploting results
-#'''
-
-
- ###   plt.figure(1)
-#plt.imshow(layout, cmap='viridis')
-#plt.colorbar()
-  ###  plt.savefig('layout.png')
-
-
-   ##### fig, ax = plt.subplots()
-#ax.plot(x, y)
-  ####  ax.hlines(y=50, xmin=100, xmax=300, linewidth=2, color='r')
-  ###  ax.hlines(y=50, xmin=400, xmax=600, linewidth=2, color='r')
-  ####  ax.vlines(x=600, ymin=50, ymax=400, linewidth=2, color='r')
-  ####  ax.vlines(x=100, ymin=50, ymax=300, linewidth=2, color='r')
-
-  ####  ax.vlines(x=300, ymin=50, ymax=80, linewidth=2, color='r')
-  #####  ax.vlines(x=300, ymin=120, ymax=180, linewidth=2, color='r')
-#####    ax.vlines(x=300, ymin=220, ymax=300, linewidth=2, color='r')
-  #####  ax.vlines(x=300, ymin=380, ymax=400, linewidth=2, color='r')
-  ####  ax.hlines(y=300, xmin=100, xmax=180, linewidth=2, color='r')
-  #######  ax.hlines(y=300, xmin=220, xmax=300, linewidth=2, color='r')
-
-
-  #########  ax.hlines(y=200, xmin=550, xmax=600, linewidth=2, color='r')
-
-  #######  ax.hlines(y=400, xmin=470, xmax=600, linewidth=2, color='r')
-  ######  ax.hlines(y=400, xmin=300, xmax=320, linewidth=2, color='r')
-
-
-  #######  ax.hlines(y=200, xmin=20, xmax=100, linewidth=2, color='r')
-  ####  ax.vlines(x=20, ymin=200, ymax=350, linewidth=2, color='r')
-   ########3 ax.hlines(y=350, xmin=20, xmax=100, linewidth=2, color='r')
-
-
-  #####  ax.vlines(x=100, ymin=350, ymax=550, linewidth=2, color='r')
- #####   ax.hlines(y=550, xmin=100, xmax=500, linewidth=2, color='r')
-  #########  ax.vlines(x=500, ymin=400, ymax=550, linewidth=2, color='r')
-
-
-
-
-
-
- ###   plt.figure(2)
- ###   plt.imshow(nTrace, cmap='viridis')
-###    plt.colorbar()
-
-
+ ####   fig4 = plt.figure(4)
+    colorArray = []
+    print("Before call function coloring areas")
+  ####  coloredAreasImage = coloringOfSignalAreas(rfMapFull, nPixelsX, nPixelsY)
+    for j in range(len(resultImagesArray)):
+        color = list(np.random.choice(range(256), size=3))
+        colorArray.append(color)
+        print("CURRENT COLOR")
     
-#plt.figure(3)
-#rfMap[rr,cc] = val
-   # rfMap[rr1,cc1] = 1
-    print('Last Value')
-    #print(rfMap[100])
-    print(int(txLocationX))
-    print(int(txLocationY))    	
-  #####  plt.imshow(rfMap, cmap='viridis')
- #   plt.colorbar()
-  ####  plt.savefig('RfMap.png')
-    img2[:,:,0] = 255
-    img2[:,:,1] = rfMap + 255
-    img2[:,:,2] = 0
-   # img2[int(txLocationX),int(txLocationY),0] = 0
-   # img2[int(txLocationX),int(txLocationY),0] = 255
-   # img2[int(txLocationX),int(txLocationY),0] = 0
-   # vis2 = cv2.CreateMat(int(nPixelsX),int(nPixelsY), cv.CV_32FC3)
-   # vis0 = cv2.fromarray(rfMap)
-   # vis2 = cv2.cvtColor(rfMap, cv2.COLOR_GRAY2BGR)
-	
-   # img2[50,100:300,0] = 0
-   # img2[50,100:300,1] = 0
-   # img2[50,100:300,2] = 255
- #   cv2.circle(img2,(200,300), 5, (0,255,0), -1)   
-  #  img2 = cv2.line(img2, (100,50), (300,50), (0,0,255), 3) 
-   # img2[:,:,4] = rfMap + 255	
-   # rfMap = cv.convertScaleAbs(rfMap, alpha=(255.0))
-   # image = cv2.cvtColor(rfMap,cv2.COLOR_GRAY2BGR)
-    #img = cv2.convertScaleAbs(rfMap, alpha=(255.0))
-    #outputImg8U = cv2.convertScaleAbs(rfMap, alpha=(255.0/65535.0))
-    cv2.imwrite('testfileRes.png',img2)
+    maxElSINR = -100000
+    minElSINR = 100000
+    maxDBMValue = -90	
+    countOfPositiveValues = 0    	
+    print("After new function ")
+    file2write=open("rfMapFull.txt",'w')
+    fileSINRData = open("sinrData.txt",'w')
+#file2write.write("here goes the data")
 
-
-  ####  fig4 = plt.figure(4)
+    for i in range(nPixelsX):
+        for j in range(nPixelsY):
+        
+             
+            if rfMap[i,j] > 0 :
+                countOfPositiveValues = countOfPositiveValues +1           
+            arrayOfCompValues=[]
+            for k in range(len(resultImagesArray)):
+                arrayOfCompValues.append(resultImagesArray[k][i,j])
+              
+			
+            maxValueColorIndex  =  findMaximumValueIndexFromArray(arrayOfCompValues)
+            rfMapFull[i,j] = resultImagesArray[maxValueColorIndex][i,j]
+            if rfMapFull[i,j] >= -70:
+                maskImgHeight[i,j] = 255
+            file2write.write(str(rfMapFull[i,j]))
+            file2write.write(" ")
+           # file2write.write("kjkjk ")
+        #    print("Before SINR function call")
+          #  print(arrayOfCompValues)
+            sinrDbmValue = SINR_dbCalculationFunction(arrayOfCompValues)
+            fileSINRData.write(str(sinrDbmValue))
+            fileSINRData.write(" ")
+           # print("after SINR function call")
+            if sinrDbmValue < minElSINR:
+                minElSINR = sinrDbmValue
+            if sinrDbmValue > maxElSINR:
+                maxElSINR = sinrDbmValue
+            imgFullSINR[i,j] = sinrDbmValue
+          #  fileArrayTxtFile.write(str(imgFullSINR[i,j]))
+            fileArrayTxtFile.write(" ")
+       
+          
+            if maxValueColorIndex == -1:
+                color = (0,0,0)
+            else:			
+                color = colorArray[maxValueColorIndex]
+          #  print("Max color index")
+           # print(maxValueColorIndex)
+            imgFullColored[i,j,0] = color[0]
+            imgFullColored[i,j,1] = color[1]
+            imgFullColored[i,j,2] = color[2]
+        file2write.write("\n")
+        fileSINRData.write("\n")
+       # fileArrayTxtFile.write("\n")
+    coloredAreasImage = coloringOfSignalAreas(rfMapFull, nPixelsX, nPixelsY)
+    file2write.close()
+    fileSINRData.close()
+   # sio.savemat("resHeightMap.mat", {"proj": rfMapFull})
+    #save('resHeightMap.mat', 'rfMapFull')
+    print("Count of positive values ")
+    print(countOfPositiveValues)
+    maxDBMValue =  findMaximumElementOfMat(rfMapFull,nPixelsX,nPixelsY)
+    print(maxDBMValue)
+    img2[:,:,0] = 100
+    img2[:,:,1] = rfMapFull  + np.abs(np.min(rfMapFull))
+    img2[:,:,2] = 0	   
+    for tmpArray in arrayFinal:   
+        img2 = cv2.line(img2, (tmpArray[0],tmpArray[1]), (tmpArray[2],tmpArray[3]), (0,0,255), 3)
+    print("After full SINR work")
+    fileArrayTxtFile.write("Max El DBM \n")
+    print("after writing first string SINR\n")
+    print(maxDBMValue)
+   # fileArrayTxtFile.write(str(minElSINR))
+   # fileArrayTxtFile.write(maxDBMValue)
+   # fileArrayTxtFile.write(str(maxElSINR))	
+    print("After  max SINR element writing into file")   
+    fileArrayTxtFile.close()
+############Drawing of axis points on result images#############
+    print("Before sinr function coloring call ")
+    imgResSINR = createColoredImageWithSINR(imgFullSINR,nPixelsX,nPixelsY)
+    print("After sinr function coloring call")
+    for indexOfArray in range(len(splitImageSizeArray)-1):        
+        txLocationX = int(splitImageSizeArray[indexOfArray][3])*deltaX# 1*xMax/6
+        txLocationY =  int(splitImageSizeArray[indexOfArray][2])*deltaY
+        print("Circle point coordinate")
+        print(txLocationX)
+        print(txLocationY)		
+        cv2.circle(coloredAreasImage,(int(txLocationY)*4,int(txLocationX)*4),15,(0,255,0),-1)        		
+        cv2.circle(imgFullColored,(int(txLocationY)*4,int(txLocationX)*4),15,(0,255,0),-1)
+        currentAxisPointText = "AP" + str(indexOfArray)
+        if  txLocationX*4 -20  > 0:
+            print("Inside if ")		
+            cv2.putText(imgFullColored,currentAxisPointText,(int(txLocationY)*4 ,int(txLocationX)*4  -20),cv2.FONT_HERSHEY_SIMPLEX,3.5,(0,255,0),cv2.LINE_AA)		
+    cv2.imwrite("resultImageFull.png",img2)
+    cv2.imwrite("coloredAreasImage.png",coloredAreasImage)
+    cv2.imwrite("resultSINRImage.png",imgResSINR)
+    cv2.imwrite("maskImgHeight.png",maskImgHeight)
+    print("Finall array size with rfMap")
+    print(len(resultImagesArray))
     y = np.linspace(xMin,xMax,nPixelsX)
     x = np.linspace(yMin,yMax,nPixelsY)
+    cv2.imwrite("ColoredImage.png",imgFullColored)
     X,Y = np.meshgrid(x,y)
-  ###  ax = plt.axes(projection='3d')
+ ###   ax = plt.axes(projection='3d')
  ###   ax.set_xlabel('x')
  ###   ax.set_ylabel('y')
-  ###  ax.set_zlabel('RF power (dBm)')
-  ###  ax.plot_surface(Y,X,rfMap, cmap='viridis')
-  #########  ax.view_init(60,30)
+ ###   ax.set_zlabel('RF power (dBm)')
+###    ax.plot_surface(Y,X,rfMap, cmap='viridis')
+###    ax.view_init(60,30)
+   
     return img2	
 	
 	
 #if __name__== "__main__":
-##    print("Hello World")
-  #  finalFunctionHeightMap()
+ #   print("Hello World")
+ #   finalFunctionHeightMap(800,600)
 	
 	
 	
