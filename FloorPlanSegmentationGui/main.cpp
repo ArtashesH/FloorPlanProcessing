@@ -1,9 +1,156 @@
 #include "floorplansegmentationgui.h"
 #include <QtWidgets/QApplication>
 
+
+#include <iomanip> 
+
+
+void calculateDistanceBetweenPoints(const float& latitude1, const float& longtitude1, const float& latitude2, const float& longtitude2, float& finalDist)
+{
+
+
+	float longtitudeDiff = longtitude2 - longtitude1;
+	float latitudeDiff = latitude2 - latitude1;
+
+
+	float distTmp1 = std::sin(latitudeDiff / 2 * PI / 180)  * std::sin(latitudeDiff / 2 * PI / 180) +
+		std::cos(latitude1 * PI / 180) * std::cos(latitude2 * PI / 180) *  std::sin(longtitudeDiff  * PI / 180 / 2)
+		* std::sin(longtitudeDiff * PI / 180 / 2);
+
+
+	float distTmp2 = 2 * std::atan2(std::sqrt(distTmp1), std::sqrt(1 - distTmp1));
+	float radiusOfEarth = 6371000;
+	finalDist = radiusOfEarth * distTmp2;
+
+}
+
+
+void  findRotationAngleAndDistance(const float& latitude1, const float& longtitude1, const float& latitude2, const float& longtitude2, float& rotaionAngle, float& finalDist)
+{
+
+	float longtitudeDiff = longtitude2 - longtitude1;
+	float latitudeDiff = latitude2 - latitude1;
+
+
+	float sinLong1 = std::sin(longtitudeDiff*PI / 180);
+	float cosLat1 = std::cos(latitude2*PI / 180);
+	//	std::cout << "SINLOg1 "<<std::setprecision(10) << sinLong1 << std::endl;
+	//	std::cout << "cosLat1 " << std::setprecision(10) << cosLat1 << std::endl;
+	float X = sinLong1 * cosLat1;
+	std::cout << std::setprecision(10) << "X is equal to " << X << std::endl;
+
+
+	float Y = (std::cos(latitude1*PI / 180) * std::sin(latitude2*PI / 180)) -
+		(std::sin(latitude1*PI / 180) * std::cos(latitude2*PI / 180) * std::cos(longtitudeDiff*PI / 180));
+
+
+	rotaionAngle = std::atan2(X, Y) * radiantoDeg;
+
+
+//	std::cout << std::setprecision(10) << " Y is equal to  " << Y << std::endl;
+	//std::cout << "Rotation angle " << rotaionAngle << std::endl;
+	
+
+	calculateDistanceBetweenPoints(latitude1, longtitude1, latitude2, longtitude2, finalDist);
+
+	/*float distSameLongtitude;
+	calculateDistanceBetweenPoints(latitude1, longtitude1, latitude1, longtitude2, distSameLongtitude);
+
+
+	float distanceSameLatitude;
+	calculateDistanceBetweenPoints(latitude1, longtitude1, latitude2, longtitude1, distanceSameLatitude);
+
+	std::cout << "Same longtitude  diustance " << distSameLongtitude << std::endl;
+
+	std::cout << "Same latitude   diustance " << distanceSameLatitude << std::endl;
+	*/
+
+	/*float distTmp1 = std::sin(latitudeDiff / 2 * PI / 180)  * std::sin(latitudeDiff / 2 * PI / 180) +
+		std::cos(latitude1 * PI / 180) * std::cos(latitude2 * PI / 180) *  std::sin(longtitudeDiff  * PI / 180 / 2)
+		* std::sin(longtitudeDiff * PI / 180 / 2);
+
+
+	float distTmp2 = 2 * std::atan2(std::sqrt(distTmp1), std::sqrt(1 - distTmp1));
+	float radiusOfEarth = 6371000;
+	finalDist = radiusOfEarth * distTmp2;*/
+
+	/*std::cout << "Final distance " << finalDist << std::endl;
+
+	float absDiffLatitude = std::fabs(latitude1 - latitude2);
+	float absDiffLongtitude = std::fabs(longtitude1 - longtitude2);*/
+
+
+}
+
+
+
+
+void calculateLatAndLong(const float& initLat,  const float& initLong,  const float&  meterPerX, const float& meterPerY, float& finalLat, float& finalLong)
+{
+
+
+	//lat = 51.0
+	//	lon = 0.0
+
+		//Earth’s radius, sphere
+	  // float R = 6378137;
+	float R = 6371000;
+		//offsets in meters
+		//float de = 182.88;
+	   // float dn = 201.168;
+
+
+	   float de = meterPerX;// 62.5;
+	   float dn = meterPerY;//  110.96;
+
+		//Coordinate offsets in radians
+		float dLat = dn / R;
+		float dLon = de / (R*std::cos(PI*initLat / 180));
+
+			//OffsetPosition, decimal degrees
+		finalLat = initLat + dLat * 180 / PI;
+	    finalLong = initLong + dLon * 180 / PI;
+
+
+}
+
+
+
 int main(int argc, char *argv[])
 {
 
+
+
+	/*float initLong = -73.98232519626617;
+	float initLat = 40.768855980299634;
+
+
+	float finalLat;
+	float finalLong;
+
+
+	float meterPerX = 1.282;
+	float meterPerY = -34.615;
+
+
+	calculateLatAndLong(initLat, initLong,  meterPerX, meterPerY, finalLat, finalLong);
+
+	std::cout << "Final Lat " <<std::setprecision(10)<<  finalLat << "   " << "final long  " <<std::setprecision(10)<< finalLong << std::endl;
+	*/
+	/*float latitude1 = 40.7682282835967;
+	float longtitude1 = -73.98398816585541;
+
+	float latitude2 = 40.76923178293144;
+	float longtitude2 = -73.98325860500336;
+
+	float rotationAngle;
+	float finalDist;
+	findRotationAngleAndDistance( latitude1, longtitude1, latitude2, longtitude2, rotationAngle, finalDist);
+	*/
+	
+
+	//findRotationAngleAndDistance(latitude1, longtitude1, latitude2, longtitude2,rotationAngle,finalDist);
+	
 	/*cv::Mat initImg = cv::imread("C:/Users/Julia/Documents/Visual Studio 2015/Projects/FloorPlanSegmentationGui/x64/Release/testfileRes.png");
 	for (int i = 0; i < initImg.rows; ++i) {
 		for (int j = 0; j < initImg.cols; ++j) {
@@ -21,6 +168,9 @@ int main(int argc, char *argv[])
 	std::string heightVal = "724";
 	int retCode = system("HeightMapGeneration.exe ");
 	return 0;*/
+	
+	
+
 	QApplication a(argc, argv);
 	Py_Initialize();
 	FloorPlanSegmentationGui w;

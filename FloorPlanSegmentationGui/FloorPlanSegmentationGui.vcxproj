@@ -137,6 +137,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="componentsDetection.cpp" />
     <ClCompile Include="floorplansegmentationgui.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_floorplansegmentationgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -199,6 +200,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="componentsDetection.h" />
     <ClInclude Include="GeneratedFiles\ui_floorplansegmentationgui.h" />
   </ItemGroup>
   <ItemGroup>

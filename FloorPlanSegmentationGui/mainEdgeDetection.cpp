@@ -6,7 +6,7 @@
 int main()
 {
 	cv::Mat initImg = cv::imread("E:/upworkProjs/FloorPlanAnalyzing/2dFloorPlanSimple6.jpg");
-
+	//cv::Mat initImg = cv::imread("E:/upworkProjs/FloorPlanAnalyzing/Venue_Images/Columbus Circle/1stfloor.PNG");
 	cv::Mat initImgVis = initImg.clone();
 
 	cv::Mat processedImage = initImg.clone();
