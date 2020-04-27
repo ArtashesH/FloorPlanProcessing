@@ -33,6 +33,7 @@ from skimage.draw import polygon
 from PIL import Image
 import cv2
 
+### Finding maximum value's index from givven array
 
 def findMaximumValueIndexFromArray(inputArray):
     if len(inputArray) == 0:
@@ -45,6 +46,8 @@ def findMaximumValueIndexFromArray(inputArray):
             indexOfMaximumEl = i
     return indexOfMaximumEl
 
+
+##Finding maximum value of given mat, the smallest value is -90 , considered as a smallest dbm value
 
 def findMaximumElementOfMat(inputMat, countOfRows,countOfCols):
     maximumElement = -90
@@ -60,11 +63,11 @@ def findMaximumElementOfMat(inputMat, countOfRows,countOfCols):
     return maximumElement
 	
 	
+#For current point calculate SINR value#
 	
 def SINR_dbCalculationFunction(arrayOfDbsFromPoint):
+#Find maximum value from given array
     maxDbmValueIndex = findMaximumValueIndexFromArray(arrayOfDbsFromPoint) 
- #   print("After Max Value SINR")
-  #  print(arrayOfDbsFromPoint[maxDbmValueIndex])
     if maxDbmValueIndex == -1:
         return 0
     maxDbmValue = arrayOfDbsFromPoint[maxDbmValueIndex]
@@ -73,44 +76,36 @@ def SINR_dbCalculationFunction(arrayOfDbsFromPoint):
     sumOfMvValues = 0
     for i in range(len(arrayOfDbsFromPoint)):
         tmpMvValue = math.pow(10,(arrayOfDbsFromPoint[i]/10))
-      #  print("TMP Sinrs" )
-      #  print(tmpMvValue)
-        #tmpMvValue = 10 * (arrayOfDbsFromPoint[i]/10)
-        #currentMvValuesArray.append(tmpMvValue)
+    
         if i != maxDbmValueIndex:        
             sumOfMvValues += tmpMvValue
    
     noiseVal = math.pow(10,-90/10)
     sumOfMvValues += noiseVal
-  #  print("Noise value")
-  #  print(noiseVal)	
-   # noiseVal =  10 * (-90/10)
-  #  print(arrayOfDbsFromPoint[maxDbmValueIndex])     
+    
     bestMvValue =  math.pow(10,(arrayOfDbsFromPoint[maxDbmValueIndex]/10))
- #   print("best sinr")
-  #  print(bestMvValue)
-   # bestMvValue = 10 * (arrayOfDbsFromPoint[maxDbmValueIndex]/10)
-   # print(bestMvValue)
+
     sinrMv = bestMvValue / sumOfMvValues   
-   # sinrMv = bestMvValue / (sumOfMvValues + noiseVal)
+
    
     sinrDbm = 10*(math.log10(sinrMv))	 
    # print(sinrMv)
     return sinrDbm
 	
 	
-	
+##Create colored (segmented )image for SINR values, with range by range	
 	
 def createColoredImageWithSINR( finalMapSINR,countOfRows,countOfCols):
     rfMapFull = np.ones((int(countOfRows),int(countOfCols)),np.int)
     imgRes = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1] +150, 3 ) ) 
 	
+	## FinalMapSINR is the mat , where each pixel have sinr value in corresponding place.
     print("Before for sinr")
     print(countOfRows)
     print(countOfCols)
     for i in range(countOfRows):
         for  j in range(countOfCols):
-            #print("inside for sinr")
+            #Checking some value range for coloring with different colors
             if finalMapSINR[i,j] < - 20:
                 imgRes[i,j,0] = 1
                 imgRes[i,j,1 ] = 77
@@ -191,25 +186,10 @@ def createColoredImageWithSINR( finalMapSINR,countOfRows,countOfCols):
 	
     imgRes = cv2.rectangle(imgRes,( countOfCols + 20 , int(31*countOfRows/35)),(countOfCols + 50, int(32*countOfRows / 35)),(255,255,255),-1)
     cv2.putText(imgRes,">= 180DB",(countOfCols + 5 ,int(33*countOfRows / 35)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0))
-	
-   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 ,int(4*countOfRows / 20) ),(countOfCols + 50,  int(5*countOfRows / 20)),(39,127,255),-1)
-   # cv2.putText(imgResFinal,"<= -20Dbm > -35Dbm",(countOfCols + 5 ,int(6*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
-	
-   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 ,int(7*countOfRows / 20) ),(countOfCols + 50,  int(8*countOfRows / 20)),(0,255,255),-1)
-   # cv2.putText(imgResFinal,"<= -35Dbm > -47Dbm",(countOfCols + 5 ,int(9*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
-	
-   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(10*countOfRows / 20)),(countOfCols + 50,  int(11*countOfRows / 20)),(0,255,128),-1)
-   # cv2.putText(imgResFinal,"<= -47Dbm > -60Dbm",(countOfCols + 5 ,int(12*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
-	
-   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(13*countOfRows / 20)),(countOfCols + 50,  int(14*countOfRows / 20)),(0,128,0),-1)
-   # cv2.putText(imgResFinal,"<= -60Dbm > -73Dbm",(countOfCols + 5 ,int(15*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
-	
-    
-   # imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(16*countOfRows / 20)),(countOfCols + 50,  int(17*countOfRows / 20)),(255,0,0),-1)
-   # cv2.putText(imgResFinal,"<= -73Dbm > -90Dbm",(countOfCols + 5 ,int(18*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
-    
+	    
     return imgRes				
-    	
+ 
+##Create colored (segmented )image for DBm values, with range by range	
 def coloringOfSignalAreas(finalRfMap, countOfRows, countOfCols):
     rfMapFull = np.ones((int(countOfRows),int(countOfCols)),np.int)
     imgRes = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1], 3 ) )
@@ -286,59 +266,25 @@ def coloringOfSignalAreas(finalRfMap, countOfRows, countOfCols):
 	
     
     imgResFinal = cv2.rectangle(imgResFinal,( countOfCols + 20 , int(16*countOfRows / 20)),(countOfCols + 50,  int(17*countOfRows / 20)),(255,0,0),-1)
-    cv2.putText(imgResFinal,"<= -73Dbm > -90Dbm",(countOfCols + 5 ,int(18*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)
-    
-	
-	
-    
+    cv2.putText(imgResFinal,"<= -73Dbm > -90Dbm",(countOfCols + 5 ,int(18*countOfRows / 20)),cv2.FONT_HERSHEY_COMPLEX,0.3,(0,255,0),1)  
         
     print("coloring finished ")
     return imgResFinal
 
 
+#### Find reflection angle for current wave
 def FindReflectionAngle(x,y,theta,rayPowerStopThresholddB,rfMap,layout,nTrace,nPixelsX,nPixelsY,poly):
    
     c= 3e8 # speed of light
        
    
-    #rayPowerStopThresholddB  = -90 # dBm
- 
-
-   
 
 
-
-   # img = np.zeros((int(nPixelsX),int(nPixelsY)))
-
-
-# fill polygon
-#    poly = np.array((  (100, 100),    (100, 200),    (300, 300)))
- #   rr, cc = polygon(poly[:,0], poly[:,1], img.shape)
-#img[rr,cc] = 1
-#plt.imshow(img)
-#plt.show()
-
-
-
-#rr, cc, val = line_aa(int(nPixelsX*0.1),int(nPixelsY*0.1), int(nPixelsX*0.9),  int(nPixelsY*0.1))
     r1 = np.array([int(nPixelsX*0.1),int(nPixelsX*0.9)])
     c1 = np.array([int(nPixelsY*0.1),int(nPixelsY*0.1)])
-
-
-#poly = np.array((
-#    (10, 10),
-#    (20, 20),
-#	(30,30)
-#))
-
     rr1,cc1 = polygon(poly[:,0], poly[:,1], rfMap.shape)
 
     val = 1
-
-
-
-
-
 
 #print(layout)
 
@@ -432,12 +378,7 @@ def GenerateRay(ray,recursionIndex,x0,y0,txPrdB,theta,gain,rayPowerStopThreshold
         
     deltaDist = np.sqrt(deltaX**2 + deltaY**2)*0.25 # ray update resolution
     dist = deltaDist
-  #  print('ray ', ray)
-  #  print('txPower', txPrdB)
-  #  print('angle ', angle*180/np.pi)
-  #  print('x0 ', x0)
-  #  print('y0 ', y0)
-    
+
     recursionIndex = recursionIndex + 1 # update the recursion index
     PtdB = txPrdB # transmit power for this ray
     while(not stop):
@@ -488,7 +429,7 @@ def GenerateRay(ray,recursionIndex,x0,y0,txPrdB,theta,gain,rayPowerStopThreshold
             # Ray insertion
             insertionLossdB = FindEntryLoss(freq) 
             GenerateRay(ray,recursionIndex, xNew,yNew,PrdB-insertionLossdB, angle,0,rayPowerStopThresholddB,maxRecursionsPerRay,deltaX,deltaY,angle,xMin,xMax, yMin, yMax, freq,nPixelsX, nPixelsY,poly, rfMap,layout,nTrace)
-
+####
 
 
 
@@ -497,7 +438,8 @@ Main routine
 '''           
 
 	
-	
+##Main function for height map calculation 
+
 def finalFunctionHeightMap():
     fileArrayTxtFile = open("myfile.txt","w")	
    # testArray = [-90,-70,-80,-60]
@@ -510,7 +452,7 @@ def finalFunctionHeightMap():
     lineImageSize = ''
     splitImageSizeArray = []
     
-	
+	### Reading image size from txt file and saving into some variables.
     with open('imageSize.txt') as fp:
         lineImageSize = fp.readline()
         splitImageSize = re.findall(r'\S+', lineImageSize)
@@ -523,15 +465,23 @@ def finalFunctionHeightMap():
     
     splitImageSize = re.findall(r'\S+', lineImageSize)    
     print(splitImageSize)
-   # for tempSize in splitImageSize:
-   #     print(tempSize)
-   # return		
- 
+    ##Reading data for selected or detected walls
     tree = ET.parse('testHeightMapData.xml')
     root = tree.getroot()
-    arrayFinal = []
-    print("retrurn")
+    if len(root) == 0:
+        print("Please select an image and points")
+        return 0
+		
+    #Automate generated data parse 
+    treeAut = ET.parse('testHeightMapDataAutoGenerated.xml')
+    rootAut = treeAut.getroot()
 	
+	
+	
+    arrayFinal = []
+    arrayFinalAut = []
+    print("retrurn")
+	##Seting some parameters connected with wave frequency, power and etc.
     xMin = 0 # 
     xMax = 300 #
     rayPowerStopThresholddB  = -90
@@ -542,22 +492,24 @@ def finalFunctionHeightMap():
     nPixelsY =   int(splitImageSizeArray[0][0]) #imageWidth#(yMax - yMin)/deltaY;
     maxRecursionsPerRay = 1
     nRays = 600
-    deltaX = 0.00025 #* distPerPixel # Resolution in x-axis
-    deltaY = 0.00025 #* distPerPixel # Resolution in y-axis 
- 
- 
-			
- ######   rfMap = rayPowerStopThresholddB*np.ones((int(nPixelsX),int(nPixelsY)),np.int) # RF MAp   
-    layout	= np.zeros((int(nPixelsX),int(nPixelsY))) # Roof layout
-  	
-
-  #####  img2 = np.zeros( ( np.array(rfMap).shape[0], np.array(rfMap).shape[1], 3 ) )
-    #rr, cc = polygon(poly[:,0], poly[:,1], layout.shape)
-  #  r1 = np.array([int(nPixelsX*0.1),int(nPixelsX*0.9)])
-   # c1 = np.array([int(nPixelsY*0.1),int(nPixelsY*0.1)])
-
+    deltaX = 0.25 #* distPerPixel # Resolution in x-axis
+    deltaY = 0.25 #* distPerPixel # Resolution in y-axis 
+   
+     #Creating empty layout mat, on which we will set 1 if that is wall, and 0 if that is not wall
+    layout	= np.zeros((int(nPixelsX),int(nPixelsY))) # Roof layout  	
     nTrace = np.zeros((int(nPixelsX),int(nPixelsY))) # Number of times rss computed per pixel
-     
+     ## We are observing automated detected walls and user selected walls
+    for elem in rootAut:
+        array1 = []
+        for subelem in elem:
+            array1.append(int(subelem.text))
+        arrayFinalAut.append(array1)
+    #Set layout corresponding pixel 1 from automaticlly detected walls
+	for tmpArray in arrayFinalAut:
+        layout[tmpArray[1],tmpArray[0]] = 1
+		
+	
+	#Set layout from user selected wall
     for elem in root:
   
    # print(elem.text)
@@ -585,11 +537,7 @@ def finalFunctionHeightMap():
             layout[minValY,minValX:maxValX] = 1
         else :			
             layout[minValY:maxValY,minValX:maxValX] = 1
-     #   break
-       # img2 = cv2.line(img2, (tmpArray[0],tmpArray[1]), (tmpArray[2],tmpArray[3]), (0,0,255), 3) 
-       # for tmpValue in tmpArray:
-       #     print(tmpValue)
-  #  return
+    
 # Generate rays
 	
 
@@ -601,7 +549,7 @@ def finalFunctionHeightMap():
     
     ))
 
-
+    #rfMap is mat which is containing  dbm values
 
     print("RANGE OF INDEX ")
     print((len(splitImageSizeArray)))
@@ -612,6 +560,9 @@ def finalFunctionHeightMap():
     imgFullColored = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1], 3 ) )
     maskImgHeight = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1], 1 ) )
     tmpImage = np.zeros( ( np.array(rfMapFull).shape[0], np.array(rfMapFull).shape[1], 3 ) )
+	
+	
+	 #Start wave generation and dbm mat calculation
     for indexOfArray in range(len(splitImageSizeArray)-1):
         rfMap = rayPowerStopThresholddB*np.ones((int(nPixelsX),int(nPixelsY)),np.int)
         rfMap = rayPowerStopThresholddB*np.ones((int(nPixelsX),int(nPixelsY)),np.int) # RF MAp   
@@ -623,17 +574,14 @@ def finalFunctionHeightMap():
         txLocationY =  int(splitImageSizeArray[indexOfArray][2])*deltaY# 2*yMax/4
         xStart = txLocationX
         yStart =  txLocationY
-        txPower = 23 # dBm
+        txPower = 73 # dBm
         
         for rayId in range(nRays):
             angle = 2*np.pi/nRays*rayId
             gaindB = 0
             recursion = 0
             GenerateRay(rayId,recursion,xStart,yStart,txPower,angle,gaindB,rayPowerStopThresholddB,maxRecursionsPerRay,deltaX ,deltaY ,angle,xMin, xMax,yMin,yMax, freq, nPixelsX, nPixelsY,poly, rfMap,layout,nTrace)
-                                 
-                       # print("Positive values")
-                      #  print(rfMap[i,j])						
-          #  GenerateRay(rayId,recursion,xStart,yStart,txPower,angle,gaindB,rayPowerStopThresholddB,maxRecursionsPerRay,deltaX ,deltaY ,angle,xMin, xMax,yMin,yMax, freq, nPixelsX, nPixelsY,poly, rfMapFull,layout,nTrace) 			
+                    		
         print("After generate ray function ")
        
     # Apply Guassian filter to rfMap
@@ -645,22 +593,25 @@ def finalFunctionHeightMap():
         tmpImage[:,:,0] = 100
         tmpImage[:,:,1] = rfMap  + np.abs(np.min(rfMap))
         tmpImage[:,:,2]  = 0
-      ####  img2[:,:,0] = 100
-      ####  img2[:,:,1] = rfMapFull  + np.abs(np.min(rfMapFull))
-      ####  img2[:,:,2] = 0
+
 
         for tmpArray in arrayFinal:   
             tmpImage = cv2.line(tmpImage, (tmpArray[0],tmpArray[1]), (tmpArray[2],tmpArray[3]), (0,0,255), 3)
             img2 = cv2.line(img2, (tmpArray[0],tmpArray[1]), (tmpArray[2],tmpArray[3]), (0,0,255), 3)
+			
+        for tmpArray in arrayFinalAut:   
+
+            img2 = cv2.circle(img2,(tmpArray[0],tmpArray[1]),3,(0,0,255),-1)
+            tmpImage = cv2.circle(tmpImage,(tmpArray[0],tmpArray[1]),3,(0,0,255),-1)			
+			
         finalImagePath = "testfileRes" + str(indexOfCurrentWroteImage) + ".png"
         cv2.imwrite(finalImagePath,tmpImage)
         indexOfCurrentWroteImage = indexOfCurrentWroteImage + 1
 
 
- ####   fig4 = plt.figure(4)
     colorArray = []
     print("Before call function coloring areas")
-  ####  coloredAreasImage = coloringOfSignalAreas(rfMapFull, nPixelsX, nPixelsY)
+
     for j in range(len(resultImagesArray)):
         color = list(np.random.choice(range(256), size=3))
         colorArray.append(color)
@@ -692,9 +643,7 @@ def finalFunctionHeightMap():
                 maskImgHeight[i,j] = 255
             file2write.write(str(rfMapFull[i,j]))
             file2write.write(" ")
-           # file2write.write("kjkjk ")
-        #    print("Before SINR function call")
-          #  print(arrayOfCompValues)
+     
             sinrDbmValue = SINR_dbCalculationFunction(arrayOfCompValues)
             fileSINRData.write(str(sinrDbmValue))
             fileSINRData.write(" ")
@@ -712,8 +661,7 @@ def finalFunctionHeightMap():
                 color = (0,0,0)
             else:			
                 color = colorArray[maxValueColorIndex]
-          #  print("Max color index")
-           # print(maxValueColorIndex)
+   
             imgFullColored[i,j,0] = color[0]
             imgFullColored[i,j,1] = color[1]
             imgFullColored[i,j,2] = color[2]
@@ -734,13 +682,17 @@ def finalFunctionHeightMap():
     img2[:,:,2] = 0	   
     for tmpArray in arrayFinal:   
         img2 = cv2.line(img2, (tmpArray[0],tmpArray[1]), (tmpArray[2],tmpArray[3]), (0,0,255), 3)
+		
+		
+    for tmpArray in arrayFinalAut:   
+        img2 = cv2.circle(img2,(tmpArray[0],tmpArray[1]),3,(0,0,255),-1)
+        			
+			
     print("After full SINR work")
     fileArrayTxtFile.write("Max El DBM \n")
     print("after writing first string SINR\n")
     print(maxDBMValue)
-   # fileArrayTxtFile.write(str(minElSINR))
-   # fileArrayTxtFile.write(maxDBMValue)
-   # fileArrayTxtFile.write(str(maxElSINR))	
+
     print("After  max SINR element writing into file")   
     fileArrayTxtFile.close()
 ############Drawing of axis points on result images#############
@@ -769,12 +721,7 @@ def finalFunctionHeightMap():
     x = np.linspace(yMin,yMax,nPixelsY)
     cv2.imwrite("ColoredImage.png",imgFullColored)
     X,Y = np.meshgrid(x,y)
- ###   ax = plt.axes(projection='3d')
- ###   ax.set_xlabel('x')
- ###   ax.set_ylabel('y')
- ###   ax.set_zlabel('RF power (dBm)')
-###    ax.plot_surface(Y,X,rfMap, cmap='viridis')
-###    ax.view_init(60,30)
+
    
     return img2	
 	

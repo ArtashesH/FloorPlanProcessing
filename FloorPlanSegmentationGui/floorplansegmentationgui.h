@@ -132,7 +132,23 @@ private:
 };
 
 
+struct materialDataStr {
+	std::string m_materialType;
+	unsigned int m_materialID;
+	std::string m_materialName;
+	unsigned int m_materialTickness;
+};
+struct roomDataStr {
+	unsigned int m_floorId;
+	std::string m_roomName;
+	std::string m_buildingName;
 
+};
+
+struct accessPointDataStr {
+	unsigned int m_accessPointID;
+	std::string m_accessPointType;
+};
 
 
 
@@ -159,6 +175,7 @@ public slots:
 
 	void drawHeightMapValue();
 	void coloringOfSelectedPolygonSlot();
+	void coloringOfSelectedAccessPoint();
 	void coloringOfSelectedWalls();
 	void removingSelectedPointsSlot();
 	void onRemoveLastSelectedPoint();
@@ -167,6 +184,8 @@ public slots:
 	void drawHeightMapContourSlot();
 	void resetSceneSlot();
 	void detectComponentsSlot();
+	void detectAccessPoints();
+	void generateGeoJsonSlot();
 
 
 public:
@@ -187,10 +206,13 @@ public:
 	bool parseHeightMapTxtFile(cv::Mat& resHeightMap, cv::Mat& resSINRMat);
 	void findOuterContour(const cv::Mat& inputMaskImg, cv::Mat& resImg);
 	void rotateCurrentImage();
+	void rotateCurrentPoint();
 	void findRotationAngleAndDistance(const float& latitude1, const float& longtitude1, const float& latitude2, const float& longtitude2, float& rotationAngle, float& finalDist);
 	float getAngleBetweenPoints(const float& x1, const float&  y1, const float& x2, const float& y2);
 	void calculateLatAndLong(const float& initLat, const float& initLong, const float&  meterPerX, const float& meterPerY, float& finalLat, float& finalLong);
-	void generateGeojsonFileLast();
+	void generateGeojsonFileForWalls();
+	void generateGeojsonFileForRooms();
+	void generateGeojsonFileForAccessPoints();
 	void generateGeojsonFile();
 	//void calculateRotationAngle();
 
@@ -295,10 +317,16 @@ private:
 	Ui::FloorPlanSegmentationGuiClass ui;
 	QWidget* m_mainWidget;
 	QWidget* m_segmentDataWidget;
-	QDialog* m_parametersWidget;
+	QDialog* m_geoJsonWidget;
+	QDialog* m_materialsWidget;
+	QDialog* m_roomsWidget;
+	QDialog* m_accessPointsWidget;
 	QComboBox* m_selectComponentWidget;
-	QTableWidget*  m_tableWidget;
-	QLineEdit* m_lineForTypeOfRoom;
+	QTableWidget*  m_tableWidgetGeojson;
+	QTableWidget* m_tableWidgetMaterial;
+	QTableWidget* m_tableWidgetRooms;
+	QTableWidget* m_tableWidgetAccessPoints;
+//	QLineEdit* m_lineForTypeOfRoom;
 
 
 	QVBoxLayout* m_mainLayout;
@@ -311,9 +339,11 @@ private:
 	QPushButton* m_runSegmentationButton;
 	QPushButton* m_runHeightMapGenerationButton;
 	QPushButton* m_runComponentsDetectionButton;
+	QPushButton* m_runAccessPointDetectionButton;
 	QPushButton* m_runResetButton;
 	QPushButton* m_applyHeightMapData;
 	QPushButton* m_showHeightMapImageButton;
+	QPushButton* m_runGeojsonGenerationButton;
 	QString m_selectedImagePath;
 	QImage m_image;
 	cv::Mat m_heightMapImage;
@@ -322,7 +352,17 @@ private:
 	cv::Mat m_contourImage;
 	cv::Mat m_cvImage;
 	QPolygonF m_poly;
+	QVector<std::pair<QPolygonF,materialDataStr>> m_multiLineWalls;
+	QVector<std::pair<QPolygonF,roomDataStr>> m_multiPolygonRooms;
+	QVector<std::pair<cv::Point, accessPointDataStr>> m_multiAccessPoints;
+	QVector<cv::Point> m_multiPoints;
+	
+	//std::vector<cv::Point> m_accessPointsVector;
 	QComboBox * m_roomColorComboBox;
+	QComboBox * m_wallColorComboBox;
+	QComboBox *m_accessPointColorComboBox;
+	
+	
 //	QSpinBox* m_rotationAngleSpinBox;
 	QDoubleSpinBox* m_longtitudeSpinBox1;
 	QDoubleSpinBox* m_latitudeSpinBox1;
@@ -330,7 +370,20 @@ private:
 	QDoubleSpinBox* m_latitudeSpinBox2;
 	QDoubleSpinBox* m_scaleValueSpinBoxX;
 	QDoubleSpinBox* m_scaleValueSpinBoxY;
+	QSpinBox* m_materialIDSpinBox;
+	QSpinBox* m_materialTicknessSpinBox;
+	QSpinBox* m_accessPointID;
+
+	QComboBox* m_materialNameComboBox;
+	QComboBox* m_materialTypeComboBox;	
 	QComboBox* m_roomTypeComboBoBox;
+
+	QLineEdit* m_roomNameLine;
+	QLineEdit* m_buildingNameLine;
+	QLineEdit* m_accessPointName;
+	QSpinBox* m_floorIDSpinbox;
+
+
 	bool m_isDbmBoxChecked;
 	bool m_isSinrBoxChecked;
 	QCheckBox* m_DbmShowingButton;
@@ -356,8 +409,11 @@ private:
 	cv::FileStorage m_fs;
 
 	componentsDetector m_componentDetector;
+	materialDataStr m_materialDataForCurrentWall;
+	std::pair<cv::Point, cv::Point> m_selectedPointsForGeoJson;
 
 	bool m_isSelectedAxisPoint;
+	float m_realDistanceBetweenSelectedPoints;
 	int m_indexOfPolygonPoint;
 	
 
