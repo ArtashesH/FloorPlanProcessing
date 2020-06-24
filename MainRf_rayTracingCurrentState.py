@@ -376,7 +376,7 @@ def GenerateRay(ray,recursionIndex,x0,y0,txPrdB,theta,gain,rayPowerStopThreshold
     else:
         stop = True # Terminate ray
         
-    deltaDist = np.sqrt(deltaX**2 + deltaY**2)*0.25 # ray update resolution
+    deltaDist = np.sqrt(deltaX**2 + deltaY**2)*deltaX # ray update resolution
     dist = deltaDist
 
     recursionIndex = recursionIndex + 1 # update the recursion index
@@ -483,17 +483,17 @@ def finalFunctionHeightMap():
     print("retrurn")
 	##Seting some parameters connected with wave frequency, power and etc.
     xMin = 0 # 
-    xMax = 300 #
+    xMax =  int(splitImageSizeArray[0][1]) #
     rayPowerStopThresholddB  = -90
     yMin = 0
-    yMax = 400
-    freq =  3.6#1.18 # channel frequency in GHz
+    yMax = int(splitImageSizeArray[0][0])
+    freq =  4.6#1.18 # channel frequency in GHz
     nPixelsX =    int(splitImageSizeArray[0][1])#imageHeigth;#(xMax - xMin)/deltaX;
     nPixelsY =   int(splitImageSizeArray[0][0]) #imageWidth#(yMax - yMin)/deltaY;
     maxRecursionsPerRay = 1
-    nRays = 600
-    deltaX = 0.25 #* distPerPixel # Resolution in x-axis
-    deltaY = 0.25 #* distPerPixel # Resolution in y-axis 
+    nRays = 3000
+    deltaX = 1 #* distPerPixel # Resolution in x-axis
+    deltaY = 1 #* distPerPixel # Resolution in y-axis 
    
      #Creating empty layout mat, on which we will set 1 if that is wall, and 0 if that is not wall
     layout	= np.zeros((int(nPixelsX),int(nPixelsY))) # Roof layout  	

@@ -53,6 +53,12 @@
     <ClCompile Include="componentsDetection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BinarisationUtilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NaturalBinarization.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="floorplansegmentationgui.h">
@@ -70,6 +76,12 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="componentsDetection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BinarisationUtilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NaturalBinarization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

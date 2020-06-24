@@ -5,6 +5,17 @@
 #include <iomanip> 
 
 
+#include <Python.h>
+#include <string>
+#include <iostream>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgcodecs/imgcodecs.hpp>
+
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#endif
+
+
 void calculateDistanceBetweenPoints(const float& latitude1, const float& longtitude1, const float& latitude2, const float& longtitude2, float& finalDist)
 {
 
@@ -192,17 +203,9 @@ int main(int argc, char *argv[])
 
 
 
-//#include <Python.h>
-//#include <string>
-//#include <iostream>
-//#include <opencv2/core/core.hpp>
-//#include <opencv2/imgcodecs/imgcodecs.hpp>
-//
-//#if PY_MAJOR_VERSION >= 3
-//#define IS_PY3K
-//#endif
-//
-//
+
+
+
 //const wchar_t *GetWC(const char *c)
 //{
 //	const size_t cSize = strlen(c) + 1;
@@ -228,7 +231,7 @@ int main(int argc, char *argv[])
 //
 //	Py_Initialize();
 //
-//	pName = PyUnicode_FromString("MainRf_rayTracingCurrentState");
+//	pName = PyUnicode_FromString("RT_2D");
 //
 //	/* Error checking of pName left out */
 //

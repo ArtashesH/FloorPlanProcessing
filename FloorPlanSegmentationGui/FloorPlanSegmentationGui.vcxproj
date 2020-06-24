@@ -137,6 +137,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BinarisationUtilities.cpp" />
     <ClCompile Include="componentsDetection.cpp" />
     <ClCompile Include="floorplansegmentationgui.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_floorplansegmentationgui.cpp">
@@ -158,6 +159,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="NaturalBinarization.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="floorplansegmentationgui.h">
@@ -200,8 +202,10 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BinarisationUtilities.h" />
     <ClInclude Include="componentsDetection.h" />
     <ClInclude Include="GeneratedFiles\ui_floorplansegmentationgui.h" />
+    <ClInclude Include="NaturalBinarization.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="floorplansegmentationgui.qrc">

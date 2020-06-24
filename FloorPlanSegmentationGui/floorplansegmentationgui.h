@@ -12,6 +12,9 @@
 #include <QPixmap>
 #include <QEvent>
 #include <QAction>
+#include <QTextLayout>
+#include <QLabel>
+
 
 #include <QMouseEvent>
 #include <QGraphicsPixmapItem>
@@ -61,6 +64,8 @@ class CustomScene : public QGraphicsScene
 	void finishSelectingPoints();
 	void removeLastSelectedPoint();
 	void selectMovedPoint();
+	void selectDrawingRect();
+	void drawCurrentRect();
 
 protected:
 	void mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -97,6 +102,13 @@ protected:
 		std::cout << "DOUBLE CLICKED \n";
 		emit finishSelectingPoints();
 	}
+
+	void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+		std::cout << "Mouse release event !!!!!!!!!!!!! \n";
+	//	emit removeLastSelectedPoint();
+		emit selectDrawingRect();
+	}
+
 	void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override{
 		//if (event->type() == QGraphicsSceneMouseEvent::MouseMove)
 		
@@ -104,11 +116,36 @@ protected:
 		m_currentMovedPoint.setX(pt.x());
 		m_currentMovedPoint.setY(pt.y());
 	//	qDebug() << "MOVE EVENT !!!!";
-	//	std::cout << m_currentMovedPoint.x() << "   " << m_currentMovedPoint.y() << std::endl;
+		if (event->buttons() /*&& event->button() == Qt::LeftButton*/) {
+			
+			if ( m_currentMovedPoint.x() >= m_pickedPoint.x() && m_currentMovedPoint.y() >= m_pickedPoint.y()) {
+				m_currentRemoveRect.setX(m_pickedPoint.x());
+				m_currentRemoveRect.setY(m_pickedPoint.y());
+				m_currentRemoveRect.setWidth(std::abs(m_pickedPoint.x() - m_currentMovedPoint.x()));
+				m_currentRemoveRect.setHeight(std::abs(m_pickedPoint.y() - m_currentMovedPoint.y()));
+				std::cout << "Moved point " << m_currentMovedPoint.x() << "   " << m_currentMovedPoint.y() << std::endl;
+				emit drawCurrentRect();
+				//emit removeLastSelectedPoint();
+			//	emit selectDrawingRect();
+			}
+			else {
+				m_currentRemoveRect.setX(0);
+				m_currentRemoveRect.setY(0);
+				m_currentRemoveRect.setWidth(0);
+				m_currentRemoveRect.setHeight(0);
+			}
+			
+			
+		}
 		emit selectMovedPoint();
 		//emit removeLastSelectedPoint();
 
 	}
+
+
+
+
+
 public:
 
 	QPoint transferPickedPointsPosition()
@@ -121,12 +158,18 @@ public:
 		return m_currentMovedPoint;
 	}
 
+	QRect returnSelectedRectangle() 
+	{
+		return m_currentRemoveRect;
+	}
+
 private:
 	void joinCloseRects();
 	bool isRectsIntersecting();
 private:
 	QPoint m_pickedPoint;
 	QPoint m_currentMovedPoint;
+	QRect m_currentRemoveRect;
 
 
 };
@@ -174,6 +217,8 @@ public slots:
 	void sinrShowingSlot();
 
 	void drawHeightMapValue();
+	void drawSelectedRectangle();
+	void drawCurrentRectangle();
 	void coloringOfSelectedPolygonSlot();
 	void coloringOfSelectedAccessPoint();
 	void coloringOfSelectedWalls();
@@ -181,6 +226,7 @@ public slots:
 	void onRemoveLastSelectedPoint();
 	void switchComponentType(const QString& compName);
 	void writeHeightMapPointsDataSlot();
+	void writeAutomateDetWallData();
 	void drawHeightMapContourSlot();
 	void resetSceneSlot();
 	void detectComponentsSlot();
@@ -214,6 +260,7 @@ public:
 	void generateGeojsonFileForRooms();
 	void generateGeojsonFileForAccessPoints();
 	void generateGeojsonFile();
+	void removeWallComponentsByUser();
 	//void calculateRotationAngle();
 
 
@@ -321,17 +368,26 @@ private:
 	QDialog* m_materialsWidget;
 	QDialog* m_roomsWidget;
 	QDialog* m_accessPointsWidget;
+	QDialog* m_heightMapParamWidget;
+	QDialog* m_wallDataWidget;
 	QComboBox* m_selectComponentWidget;
 	QTableWidget*  m_tableWidgetGeojson;
 	QTableWidget* m_tableWidgetMaterial;
 	QTableWidget* m_tableWidgetRooms;
 	QTableWidget* m_tableWidgetAccessPoints;
+	QTableWidget* m_tableWidgetHeightMapData;
+	QTableWidget* m_tableWidgetForWallData;
+
 //	QLineEdit* m_lineForTypeOfRoom;
 
 
 	QVBoxLayout* m_mainLayout;
+	QVBoxLayout* m_heightMapParametersLayout;
+	QVBoxLayout* m_automatedDetectionLayout;
+	QHBoxLayout* m_parametersHorizaontalLayout;
 	QHBoxLayout* m_selectSegmentLayout;
 	QHBoxLayout* m_heightmapLineDetLayout;
+	QHBoxLayout* m_wallRemoveLayout;
 	QGraphicsView* m_mainGraphicsView;
 	CustomScene* m_mainGraphicsScene;
 	QGraphicsPixmapItem* m_pixmapItem;
@@ -357,11 +413,18 @@ private:
 	QVector<std::pair<cv::Point, accessPointDataStr>> m_multiAccessPoints;
 	QVector<cv::Point> m_multiPoints;
 	
+
+
+	QLabel* m_wallDetectionAlgName;
+	QLabel* m_WallRemoveLabelName;
+	QCheckBox* m_WallRemoveCheckbox;
+
+	
 	//std::vector<cv::Point> m_accessPointsVector;
 	QComboBox * m_roomColorComboBox;
 	QComboBox * m_wallColorComboBox;
 	QComboBox *m_accessPointColorComboBox;
-	
+	QComboBox *m_automatedDetectionAlgCombobox;
 	
 //	QSpinBox* m_rotationAngleSpinBox;
 	QDoubleSpinBox* m_longtitudeSpinBox1;
@@ -370,13 +433,20 @@ private:
 	QDoubleSpinBox* m_latitudeSpinBox2;
 	QDoubleSpinBox* m_scaleValueSpinBoxX;
 	QDoubleSpinBox* m_scaleValueSpinBoxY;
+	QDoubleSpinBox* m_rayFreqSpinBox;
+	QDoubleSpinBox* m_pixelPerMeterScaleSpinBox;
+	QDoubleSpinBox* m_thicknessOfWallSpinBox;
+	QDoubleSpinBox* m_permittivityOfWallSpinBox;
+	QDoubleSpinBox* m_lossTangentOfWallSpinBox;
 	QSpinBox* m_materialIDSpinBox;
 	QSpinBox* m_materialTicknessSpinBox;
 	QSpinBox* m_accessPointID;
+	QSpinBox* m_countOfRaysSpinBox;
 
 	QComboBox* m_materialNameComboBox;
 	QComboBox* m_materialTypeComboBox;	
 	QComboBox* m_roomTypeComboBoBox;
+	QComboBox* m_modelForHeightMapComboBox;
 
 	QLineEdit* m_roomNameLine;
 	QLineEdit* m_buildingNameLine;
@@ -406,6 +476,10 @@ private:
 	float m_latitudeValue2;
 	float m_scaleValueX;
 	float m_scaleValueY;
+	double m_rayFreqForHeightMap;
+	float m_currentWallThickness;
+	int m_countOfRaysForHeightMap;
+	double m_pixelPerMeterScaleParameterForHeightMap;
 	cv::FileStorage m_fs;
 
 	componentsDetector m_componentDetector;
