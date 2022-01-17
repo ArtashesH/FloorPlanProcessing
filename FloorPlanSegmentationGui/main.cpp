@@ -1,4 +1,5 @@
 #include "floorplansegmentationgui.h"
+#include "NaturalBinarization.h"
 #include <QtWidgets/QApplication>
 
 
@@ -129,9 +130,106 @@ void calculateLatAndLong(const float& initLat,  const float& initLong,  const fl
 
 int main(int argc, char *argv[])
 {
+	NaturalBinarization natBin(160,160,0.05);
+
+	cv::Mat maskImg = cv::imread("C:/Users/Julia/Downloads/IMG_014.jpg");
+	cv::Mat grayImg;
+	cv::Mat threshImg;
+	cv::blur(maskImg, maskImg, cv::Size(21, 21));
+	cv::cvtColor(maskImg, grayImg, CV_BGR2GRAY);
+	/*cv::Mat hsvImg;
+	cv::cvtColor(maskImg, hsvImg, CV_BGR2HSV);
+	cv::imshow("InitImg", maskImg);
 
 
 
+	for (int i = 0; i < maskImg.rows; ++i) {
+		for (int j = 0; j < maskImg.cols; ++j) {
+			if (hsvImg.at<cv::Vec3b>(i, j)[0] > 70 && hsvImg.at<cv::Vec3b>(i, j)[2] > 200 && hsvImg.at<cv::Vec3b>(i, j)[1] > 20) {
+				grayImg.at<uchar>(i, j) = 255;
+			}
+			else {
+				grayImg.at<uchar>(i, j) = 0;
+			}
+		}
+	}
+	cv::medianBlur(grayImg, grayImg, 3);
+	cv::dilate(grayImg, grayImg, cv::Mat());
+	*/
+
+	cv::GaussianBlur(grayImg, grayImg, cv::Size(5, 5), 6);
+
+
+	/*for (int i = 0; i < grayImg.rows; ++i) {
+		for (int j = 0; j < grayImg.cols; ++j) {
+			if (grayImg.at<uchar>(i, j) > 15) {
+				grayImg.at<uchar>(i, j) = 255;
+			}
+			else {
+				grayImg.at<uchar>(i, j) = 0;
+			}
+		}
+
+	}*/
+
+	cv::threshold(grayImg, threshImg, 20, 225, CV_THRESH_BINARY);
+	
+	//threshImg = grayImg.clone();
+
+
+
+
+
+
+//	cv::medianBlur(threshImg, threshImg, 5);
+//	cv::blur(threshImg, threshImg,cv::Size(5,5));
+	cv::Mat resImg = threshImg.clone();//  natBin.run(maskImg);
+	cv::cvtColor(resImg, resImg, CV_GRAY2BGR);
+   cv::blur(resImg, resImg, cv::Size(33,33));
+	//cv::resize(resImg, resImg, cv::Size(resImg.cols / 4, resImg.rows / 4), cv::INTER_LINEAR);
+	cv::imshow("resImg", resImg);
+	cv::waitKey(0);
+	cv::imwrite("C:/Users/Julia/Downloads/IMG_6759_res.jpg", resImg);
+	return 0;
+	
+/*	
+	//
+	cv::medianBlur(grayImg, grayImg, 35);
+	//cv::erode(grayImg, grayImg, cv::Mat());
+	unsigned int minPointX = grayImg.cols - 1;
+	unsigned int maxPointX = 0;
+	unsigned int minPointY = grayImg.rows - 1;
+	unsigned int maxPointY = 0;
+	for (int i = 0; i < grayImg.rows; ++i) {
+		for (int j = 0; j < grayImg.cols; ++j) {
+			if (grayImg.at<uchar>(i, j) != 0 && i < minPointY) {
+				minPointY = i;
+			}
+			if (grayImg.at<uchar>(i, j) != 0 && j < minPointX) {
+				minPointX = j;
+			}
+			if (grayImg.at<uchar>(i, j) != 0 && i > maxPointY) {
+				maxPointY = i;
+			}
+			if (grayImg.at<uchar>(i, j) != 0 && j > maxPointX) {
+				maxPointX = j;
+			}
+		}
+	}
+
+	cv::Rect rectBound;
+	rectBound.x = minPointX;
+	rectBound.y = minPointY;
+	rectBound.width = maxPointX - minPointX;
+	rectBound.height = maxPointY - minPointY;
+	cv::cvtColor(grayImg, grayImg, CV_GRAY2BGR);
+	cv::rectangle(grayImg, rectBound, cv::Scalar(0, 255, 0), 2);
+	std::cout << "Rect width " << rectBound.width << "   rect height " << rectBound.height << std::endl;
+	cv::imshow("gray", grayImg);
+
+	cv::waitKey(0);
+	return 0;
+	
 	/*float initLong = -73.98232519626617;
 	float initLat = 40.768855980299634;
 
@@ -231,7 +329,7 @@ int main(int argc, char *argv[])
 //
 //	Py_Initialize();
 //
-//	pName = PyUnicode_FromString("RT_2D");
+//	pName = PyUnicode_FromString("RT_2D_04_03_2021Moh-v3");
 //
 //	/* Error checking of pName left out */
 //
@@ -320,7 +418,7 @@ int main(int argc, char *argv[])
 //
 //	Py_Initialize();
 //	
-//	pName = PyUnicode_FromString( "MainRf_rayTracingCurrentState");
+//	pName = PyUnicode_FromString( "RT_2D20_02_2021");
 //	
 //	/* Error checking of pName left out */
 //

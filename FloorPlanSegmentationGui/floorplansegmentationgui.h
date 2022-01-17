@@ -35,7 +35,13 @@
 
 #include <iostream>
 
-#include <Python.h>
+
+
+#pragma push_macro("slots")
+#undef slots
+#include "Python.h"
+#pragma pop_macro("slots")
+
 
 
 
@@ -109,6 +115,17 @@ protected:
 		emit selectDrawingRect();
 	}
 
+
+	void mouseWhellEvent(QGraphicsSceneMouseEvent *event) 
+	{
+		if (event->modifiers().testFlag(Qt::ControlModifier))
+		{
+			std::cout << "Mouse scroll event \n";
+			//scaleView(pow((double)2, -event->delta() / 240.0));
+		}
+
+	}
+
 	void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override{
 		//if (event->type() == QGraphicsSceneMouseEvent::MouseMove)
 		
@@ -137,6 +154,7 @@ protected:
 			
 			
 		}
+		std::cout << "Before select moved point signal \n";
 		emit selectMovedPoint();
 		//emit removeLastSelectedPoint();
 
@@ -180,6 +198,7 @@ struct materialDataStr {
 	unsigned int m_materialID;
 	std::string m_materialName;
 	unsigned int m_materialTickness;
+	float m_currentWallHeight;
 };
 struct roomDataStr {
 	unsigned int m_floorId;
@@ -232,6 +251,11 @@ public slots:
 	void detectComponentsSlot();
 	void detectAccessPoints();
 	void generateGeoJsonSlot();
+	void addLastSelectedWallSlot();
+	void addLastSelectedWallLineSlot();
+	void zommCurrentImageSlot();
+	void zoomDownSlot();
+	void zoomUpSlot();
 
 
 public:
@@ -400,6 +424,10 @@ private:
 	QPushButton* m_applyHeightMapData;
 	QPushButton* m_showHeightMapImageButton;
 	QPushButton* m_runGeojsonGenerationButton;
+	QPushButton* m_selectLastSelectedWallButton;
+	QPushButton* m_selectLastSelectedWallLineButton;
+	QPushButton* m_zoomDownButton;
+	QPushButton* m_zoomUpButton;
 	QString m_selectedImagePath;
 	QImage m_image;
 	cv::Mat m_heightMapImage;
@@ -408,6 +436,7 @@ private:
 	cv::Mat m_contourImage;
 	cv::Mat m_cvImage;
 	QPolygonF m_poly;
+	QPolygonF m_polyAutoDetected;
 	QVector<std::pair<QPolygonF,materialDataStr>> m_multiLineWalls;
 	QVector<std::pair<QPolygonF,roomDataStr>> m_multiPolygonRooms;
 	QVector<std::pair<cv::Point, accessPointDataStr>> m_multiAccessPoints;
@@ -417,6 +446,7 @@ private:
 
 	QLabel* m_wallDetectionAlgName;
 	QLabel* m_WallRemoveLabelName;
+	QLabel* m_zoomLabelName;
 	QCheckBox* m_WallRemoveCheckbox;
 
 	
@@ -440,8 +470,12 @@ private:
 	QDoubleSpinBox* m_lossTangentOfWallSpinBox;
 	QSpinBox* m_materialIDSpinBox;
 	QSpinBox* m_materialTicknessSpinBox;
+	QDoubleSpinBox* m_wallHeightSpinBox;
+	QDoubleSpinBox* m_accessPointHeightSpinBox;
 	QSpinBox* m_accessPointID;
 	QSpinBox* m_countOfRaysSpinBox;
+	QSpinBox* m_deviceAlignmentSpinBox;
+	QSpinBox* m_zoomOptionSpinBox;
 
 	QComboBox* m_materialNameComboBox;
 	QComboBox* m_materialTypeComboBox;	
@@ -474,12 +508,16 @@ private:
 	float m_latitudeValue1;
 	float m_longtitudeValue2;
 	float m_latitudeValue2;
+	std::pair<int, int> m_initialGeojsonPointCoord;
+	std::pair<int, int> m_secondGeojsonPointCoord;
 	float m_scaleValueX;
 	float m_scaleValueY;
 	double m_rayFreqForHeightMap;
 	float m_currentWallThickness;
 	int m_countOfRaysForHeightMap;
+	int m_deviceAlignmentAngle;
 	double m_pixelPerMeterScaleParameterForHeightMap;
+	int m_previousZoomValue;
 	cv::FileStorage m_fs;
 
 	componentsDetector m_componentDetector;

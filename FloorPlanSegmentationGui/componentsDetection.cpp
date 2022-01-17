@@ -160,9 +160,9 @@ void componentsDetector::findInnerAndOuterWallPoints(const std::string& procAlgT
 	cv::Mat binImg;
 
 	binImg = natBin.run(initImgVis);
-	cv::imshow("InitImg", initImgVis);
+	//cv::imshow("InitImg", initImgVis);
 
-	cv::imshow("SobelRes", binImg);
+	//cv::imshow("SobelRes", binImg);
 
 	m_resultImage = m_image.clone();
 	cv::Mat processedImage = m_image.clone();
@@ -172,7 +172,7 @@ void componentsDetector::findInnerAndOuterWallPoints(const std::string& procAlgT
 
 
 	//processedImage = binImg.clone();
-	cv::imshow("ProcImg", processedImage);
+	//cv::imshow("ProcImg", processedImage);
 	if (currPr == processingType::innerAgresive) {
 		cv::threshold(processedImage, processedImage, 240, 250, CV_THRESH_BINARY);
 	}

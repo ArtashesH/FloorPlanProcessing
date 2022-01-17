@@ -17,7 +17,9 @@
 
 //#include <Python.h>
 #include <string>
+#include <iostream>
 #include <iomanip>
+#include <map>
 #include <fstream>
 
 
@@ -142,11 +144,20 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 	m_runGeojsonGenerationButton->setEnabled(false);
 //	m_runGeojsonGenerationButton->setFixedWidth(m_mainGraphicsScene->width() / 7);
 
+	m_selectLastSelectedWallButton = new QPushButton("GetLastPointWall");
+	m_selectLastSelectedWallButton->setEnabled(true);
+
+	m_selectLastSelectedWallLineButton = new QPushButton("GetLastWall");
+	m_selectLastSelectedWallLineButton->setEnabled(true);
+
 
 	m_runResetButton = new QPushButton("Reset");
 	//m_runResetButton->setFixedWidth(m_mainGraphicsScene->width() / 7);
 //	m_runResetButton->
 
+
+	m_zoomDownButton = new QPushButton("Zoom Down");
+	m_zoomUpButton = new QPushButton("Zoom Up");
 
 	m_applyHeightMapData = new QPushButton("ApplyHeightMapSlection");
 	m_applyHeightMapData->setEnabled(false);
@@ -212,7 +223,7 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 
 	m_tableWidgetMaterial = new QTableWidget;
 	m_tableWidgetMaterial->setObjectName("MaterialsTableWidget");
-	m_tableWidgetMaterial->setRowCount(6);
+	m_tableWidgetMaterial->setRowCount(7);
 	m_tableWidgetMaterial->setColumnCount(2);
 	m_tableWidgetMaterial->setColumnWidth(0, 150);
 	m_tableWidgetMaterial->setColumnWidth(1, 150);
@@ -220,6 +231,7 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 	m_tableWidgetMaterial->setColumnWidth(3, 150);
 	m_tableWidgetMaterial->setColumnWidth(4, 150);
 	m_tableWidgetMaterial->setColumnWidth(5, 150);
+	m_tableWidgetMaterial->setColumnWidth(6, 150);
 
 
 
@@ -236,20 +248,22 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 
 	m_tableWidgetAccessPoints = new QTableWidget;
 	m_tableWidgetAccessPoints->setObjectName("AccessPointsTableWidget");
-	m_tableWidgetAccessPoints->setRowCount(3);
+	m_tableWidgetAccessPoints->setRowCount(4);
 	m_tableWidgetAccessPoints->setColumnCount(2);
 	m_tableWidgetAccessPoints->setColumnWidth(0, 150);
 	m_tableWidgetAccessPoints->setColumnWidth(1, 150);
 	m_tableWidgetAccessPoints->setColumnWidth(2, 150);
+	m_tableWidgetAccessPoints->setColumnWidth(3, 150);
 
 	m_tableWidgetHeightMapData = new QTableWidget;
 	m_tableWidgetHeightMapData->setObjectName("HeightMapTableWidget");
-	m_tableWidgetHeightMapData->setRowCount(4);
+	m_tableWidgetHeightMapData->setRowCount(5);
 	m_tableWidgetHeightMapData->setColumnCount(2);
 	m_tableWidgetHeightMapData->setColumnWidth(0, 150);
 	m_tableWidgetHeightMapData->setColumnWidth(1, 150);
 	m_tableWidgetHeightMapData->setColumnWidth(2, 150);
 	m_tableWidgetHeightMapData->setColumnWidth(3, 150);
+	m_tableWidgetHeightMapData->setColumnWidth(4, 150);
 
 
 	m_tableWidgetForWallData = new QTableWidget;
@@ -272,6 +286,7 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 	m_contourShowingButton = new QCheckBox("Show HeightMap Contour");
 	m_isDbmBoxChecked = false;
 	m_isSinrBoxChecked = false;
+	m_previousZoomValue = 100;
 
 	m_selectComponentWidget = new QComboBox();
 	m_selectComponentWidget->setFixedSize(100, 25);
@@ -408,9 +423,37 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 	m_countOfRaysSpinBox->setMaximum(10000);
 
 
+	m_deviceAlignmentSpinBox = new QSpinBox();
+	m_deviceAlignmentSpinBox->setMinimum(0);
+	m_deviceAlignmentSpinBox->setSingleStep(1);
+	m_deviceAlignmentSpinBox->setMaximum(360);
+
+
+
 	m_materialTicknessSpinBox = new QSpinBox();
 	m_materialTicknessSpinBox->setMinimum(0);
 	m_materialTicknessSpinBox->setSingleStep(1);
+
+
+	m_wallHeightSpinBox = new QDoubleSpinBox();
+	m_wallHeightSpinBox->setMinimum(0);
+	m_wallHeightSpinBox->setSingleStep(0.1);
+	m_wallHeightSpinBox->setMaximum(100);
+	m_wallHeightSpinBox->setValue(0);
+
+
+
+	m_accessPointHeightSpinBox = new QDoubleSpinBox();
+	m_accessPointHeightSpinBox->setMinimum(0);
+	m_accessPointHeightSpinBox->setSingleStep(0.1);
+	m_accessPointHeightSpinBox->setMaximum(100);
+	m_accessPointHeightSpinBox->setValue(0);
+
+	m_zoomOptionSpinBox = new QSpinBox();
+	m_zoomOptionSpinBox->setMinimum(10);
+	m_zoomOptionSpinBox->setMaximum(300);
+	m_zoomOptionSpinBox->setValue(100);
+	m_zoomOptionSpinBox->setSingleStep(10);
 
 
 
@@ -477,6 +520,16 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 	itemHeightMapParamRayCount->setFlags(itemHeightMapParamRayCount->flags() ^ Qt::ItemIsEditable);
 	m_tableWidgetHeightMapData->setItem(1, 0, itemHeightMapParamRayCount);
 	m_tableWidgetHeightMapData->setCellWidget(1, 1, m_countOfRaysSpinBox);
+
+
+
+	QTableWidgetItem *itemHeightMapParamDeviceAlignment = new QTableWidgetItem("Device Aignment", QTableWidgetItem::Type);
+	itemHeightMapParamDeviceAlignment->setFlags(itemHeightMapParamDeviceAlignment->flags() ^ Qt::ItemIsEditable);
+	m_tableWidgetHeightMapData->setItem(4, 0, itemHeightMapParamDeviceAlignment);
+	m_tableWidgetHeightMapData->setCellWidget(4, 1, m_deviceAlignmentSpinBox);
+
+
+
 
 
 
@@ -560,6 +613,15 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 	item3APName->setFlags(item3APName->flags() ^ Qt::ItemIsEditable);
 	m_tableWidgetAccessPoints->setItem(2, 0, item3APName);
 	m_tableWidgetAccessPoints->setCellWidget(2, 1, m_accessPointName);
+
+
+
+	QTableWidgetItem *item4ApHeight = new QTableWidgetItem("AP Height", QTableWidgetItem::Type);
+	m_tableWidgetAccessPoints->setMinimumWidth(500);
+	item4ApHeight->setFlags(item4ApHeight->flags() ^ Qt::ItemIsEditable);
+	m_tableWidgetAccessPoints->setItem(3, 0, item4ApHeight);
+	m_tableWidgetAccessPoints->setCellWidget(3, 1, m_accessPointHeightSpinBox);
+
 	
 
 
@@ -608,13 +670,25 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 	m_tableWidgetMaterial->setCellWidget(4, 1, m_materialTicknessSpinBox);
 
 
+	QTableWidgetItem *item6Mat = new QTableWidgetItem("Wall Height", QTableWidgetItem::Type);
+	m_tableWidgetMaterial->setMinimumWidth(500);
+	item6Mat->setFlags(item6Mat->flags() ^ Qt::ItemIsEditable);
+	m_tableWidgetMaterial->setItem(5, 0, item6Mat);
+	m_tableWidgetMaterial->setCellWidget(5, 1, m_wallHeightSpinBox);
+
+
+
+
 
 	m_wallDetectionAlgName = new QLabel;
-	m_wallDetectionAlgName->setText("                             Wall Detection");
+	m_wallDetectionAlgName->setText("Wall Detection");
 
 
 	m_WallRemoveLabelName = new QLabel;
-	m_WallRemoveLabelName->setText("                              Wall Remove");
+	m_WallRemoveLabelName->setText("Wall Remove");
+
+	m_zoomLabelName = new QLabel;
+	m_zoomLabelName->setText("Zoom ");
 
 
 	m_WallRemoveCheckbox = new QCheckBox;
@@ -704,12 +778,17 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 	m_selectSegmentLayout->addWidget(m_runComponentsDetectionButton);
 	m_selectSegmentLayout->addWidget(m_runAccessPointDetectionButton);
 	m_selectSegmentLayout->addWidget(m_runGeojsonGenerationButton);
+	m_selectSegmentLayout->addWidget(m_selectLastSelectedWallButton);
+	m_selectSegmentLayout->addWidget(m_selectLastSelectedWallLineButton);
 	m_selectSegmentLayout->addWidget(m_runResetButton);
 
 
 	m_wallRemoveLayout = new QHBoxLayout();
 	m_wallRemoveLayout->addWidget(m_WallRemoveLabelName);
 	m_wallRemoveLayout->addWidget(m_WallRemoveCheckbox);
+	
+	m_wallRemoveLayout->addWidget(m_zoomDownButton);
+	m_wallRemoveLayout->addWidget(m_zoomUpButton);
 
 
 	m_heightMapParametersLayout = new QVBoxLayout();
@@ -780,6 +859,11 @@ FloorPlanSegmentationGui::FloorPlanSegmentationGui(QWidget *parent)
 	connect(m_runComponentsDetectionButton, SIGNAL(clicked()), this, SLOT(detectComponentsSlot()));
 	connect(m_runAccessPointDetectionButton, SIGNAL(clicked()), this, SLOT(detectAccessPoints()));
 	connect(m_runGeojsonGenerationButton, SIGNAL(clicked()), this, SLOT(generateGeoJsonSlot()));
+	connect(m_selectLastSelectedWallButton, SIGNAL(clicked()), this, SLOT(addLastSelectedWallSlot()));
+	connect(m_selectLastSelectedWallLineButton, SIGNAL(clicked()), this, SLOT(addLastSelectedWallLineSlot()));
+	//connect(m_zoomOptionSpinBox, SIGNAL(valueChanged(int)), this, SLOT(zommCurrentImageSlot(int)));
+	connect(m_zoomDownButton, SIGNAL(clicked()), this, SLOT(zoomDownSlot()));
+	connect(m_zoomUpButton, SIGNAL(clicked()), this, SLOT(zoomUpSlot()));
 	//m_parametersWidget
 }
 
@@ -1016,10 +1100,11 @@ void FloorPlanSegmentationGui::writeAutomateDetWallData()
 
 
 	if (!m_WallRemoveCheckbox->isChecked()) {
-		if (m_heightMapParamWidget->exec() == QDialog::Accepted) {
+		if (m_selectComponentWidget->currentText() == "HeightMap" &&  m_heightMapParamWidget->exec() == QDialog::Accepted) {
 			std::cout << "Getting height map parameters from GUi\n";
 			m_rayFreqForHeightMap = m_rayFreqSpinBox->value();
 			m_countOfRaysForHeightMap = m_countOfRaysSpinBox->value();
+			m_deviceAlignmentAngle = m_deviceAlignmentSpinBox->value();
 			m_pixelPerMeterScaleParameterForHeightMap = m_pixelPerMeterScaleSpinBox->value();
 
 		}
@@ -1067,6 +1152,33 @@ void FloorPlanSegmentationGui::writeAutomateDetWallData()
 
 
 	std::vector<std::vector<cv::Point>> detectedWallPoints = m_componentDetector.getDetectedWallPoints();
+	materialDataStr tmpMaterialDataStr;
+	std::pair<QPolygonF, materialDataStr> tmpMaterialDataPair;
+
+	tmpMaterialDataStr.m_materialID = std::atoi(m_materialIDSpinBox->text().toStdString().c_str());
+	tmpMaterialDataStr.m_materialName = m_materialNameComboBox->currentText().toStdString();
+	tmpMaterialDataStr.m_materialTickness = std::atoi(m_materialTicknessSpinBox->text().toStdString().c_str());
+	tmpMaterialDataStr.m_materialType = m_materialTypeComboBox->currentText().toStdString();
+	tmpMaterialDataStr.m_currentWallHeight = m_wallHeightSpinBox->value();
+	tmpMaterialDataPair.second = tmpMaterialDataStr;
+
+	QPointF tmpPointFromWallFirst;
+	QPointF tmpPointFromWallSecond;
+	tmpPointFromWallFirst.setX(m_initialGeojsonPointCoord.first);
+	tmpPointFromWallFirst.setY(m_initialGeojsonPointCoord.second);
+
+	tmpPointFromWallSecond.setX(m_secondGeojsonPointCoord.first);
+	tmpPointFromWallSecond.setY(m_secondGeojsonPointCoord.second);
+	m_polyAutoDetected.clear();
+	m_polyAutoDetected.push_back(tmpPointFromWallFirst);
+	m_polyAutoDetected.push_back(tmpPointFromWallSecond);
+	tmpMaterialDataPair.first = m_polyAutoDetected;
+	m_multiLineWalls.push_back(tmpMaterialDataPair);
+	m_polyAutoDetected.clear();
+
+
+
+
 
 	for (int i = 0; i < detectedWallPoints.size(); ++i) {
 		if (detectedWallPoints[i].size() < 10) {
@@ -1086,6 +1198,10 @@ void FloorPlanSegmentationGui::writeAutomateDetWallData()
 			std::string pointNameX1 = "x" + std::to_string(1);
 			std::string pointNameY1 = "y" + std::to_string(1);
 			fs << pointNameX0 << detectedWallPoints[i][g].x << pointNameY0 << detectedWallPoints[i][g].y;
+			QPointF tmpPointFromWall;
+			tmpPointFromWall.setX(detectedWallPoints[i][g].x);
+			tmpPointFromWall.setY(detectedWallPoints[i][g].y);
+			m_polyAutoDetected.push_back(tmpPointFromWall);
 			std::string currentThickness = "thickness";
 			std::string currentPermittivity = "permittivity";
 			std::string currentlossTangen = "lossTangent";
@@ -1102,8 +1218,23 @@ void FloorPlanSegmentationGui::writeAutomateDetWallData()
 			fs << "}"; // close vector
 
 		}
-	}
 
+		
+
+		tmpMaterialDataPair.first = m_polyAutoDetected;
+		std::cout << tmpMaterialDataStr.m_materialID << "     " << tmpMaterialDataStr.m_materialName << "     " << tmpMaterialDataStr.m_materialTickness << "      " << tmpMaterialDataStr.m_materialType << std::endl;
+		m_multiLineWalls.push_back(tmpMaterialDataPair);
+		coloringOfSelectedWalls();
+		m_polyAutoDetected.clear();
+
+
+
+
+
+
+
+	}
+	m_runGeojsonGenerationButton->setEnabled(true);
 	fs.release();
 	fsT.release();
 
@@ -1144,6 +1275,7 @@ void FloorPlanSegmentationGui::writeHeightMapPointsDataSlot()
 		std::cout << "Getting height map parameters from GUi\n";
 		m_rayFreqForHeightMap = m_rayFreqSpinBox->value();
 		m_countOfRaysForHeightMap = m_countOfRaysSpinBox->value();
+		m_deviceAlignmentAngle = m_deviceAlignmentSpinBox->value();
 		m_pixelPerMeterScaleParameterForHeightMap = m_pixelPerMeterScaleSpinBox->value();
 		
 	}
@@ -1160,6 +1292,7 @@ void FloorPlanSegmentationGui::writeHeightMapPointsDataSlot()
 	std::string vectorNameParam = "Parameters";
 	fsParam << vectorNameParam << "{";
 	std::string rayFreq = "RayFrequency";
+	std::string deviceAlignment = "DeviceAlignment";
 	std::string raysCount = "RaysCount";
 	std::string scaleOfPixelPerMeter = "ScalePixelPerMeter";
 	std::string lossModelName = "LossModel";
@@ -1171,7 +1304,7 @@ void FloorPlanSegmentationGui::writeHeightMapPointsDataSlot()
 		lossModelType = false;
 
 	}
-	fsParam << rayFreq << m_rayFreqForHeightMap << raysCount << m_countOfRaysForHeightMap << scaleOfPixelPerMeter << m_pixelPerMeterScaleParameterForHeightMap << lossModelName << lossModelType;
+	fsParam << rayFreq << m_rayFreqForHeightMap << raysCount << m_countOfRaysForHeightMap << scaleOfPixelPerMeter << m_pixelPerMeterScaleParameterForHeightMap << lossModelName << lossModelType<<deviceAlignment<<m_deviceAlignmentAngle;
 	fsParam << "}";
 	fsParam.release();
 
@@ -1462,7 +1595,7 @@ void FloorPlanSegmentationGui::detectComponentsSlot()
 
 	m_componentDetector.findInnerAndOuterWallPoints(m_automatedDetectionAlgCombobox->currentText().toStdString());
 
-	//Detection based on  threszhold points 
+	//Detection based on  thresshold points 
 	std::vector<cv::Point> detectedPointsVec = m_componentDetector.getDetectedPoints();
 	std::vector<std::vector<cv::Point>> detectedWallsVec = m_componentDetector.getDetectedWallPoints();
 	QBrush brush;
@@ -1485,7 +1618,7 @@ void FloorPlanSegmentationGui::detectComponentsSlot()
 			elipseItem->setRect(detectedWallsVec[i][j].x, detectedWallsVec[i][j].y, 1, 1);
 			m_mainGraphicsScene->addItem(elipseItem);
 
-
+		
 			elipseItem = NULL;
 			delete elipseItem;
 		}
@@ -1680,7 +1813,9 @@ void FloorPlanSegmentationGui::detectAccessPoints()
 
 void FloorPlanSegmentationGui::generateGeoJsonSlot()
 {
-	if (m_selectComponentWidget->currentText() == "Wall") {
+	std::cout << "Called geojson generation \n";
+	if (m_selectComponentWidget->currentText() == "Wall" ) {
+		std::cout << "Called geojson generation for automated walls  \n";
 		generateGeojsonFileForWalls();
 	} else if (m_selectComponentWidget->currentText() == "Room") {
 		generateGeojsonFileForRooms();
@@ -1692,6 +1827,260 @@ void FloorPlanSegmentationGui::generateGeoJsonSlot()
 
 
 	std::cout << "After function call \n";
+}
+
+void FloorPlanSegmentationGui::addLastSelectedWallSlot()
+{
+
+
+
+	QBrush brush;
+	brush.setColor(Qt::red);
+
+	brush.setStyle(Qt::SolidPattern);
+	QPen pen(Qt::green);
+	pen.setBrush(brush);
+	pen.setWidth(1);
+
+	unsigned int currentLastElementIndexInLastPolygon = m_multiLineWalls[m_multiLineWalls.size() - 1].first.size() - 1;
+	std::cout << "Last wall reconstructing part \n";
+	std::cout << "Last point " << m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon).x() << "   " << m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon).y() << std::endl;
+	//m_multiLineWalls[0].first.at(m_multiLineWalls.size() - 1).
+
+	QGraphicsEllipseItem* elipseItem = new QGraphicsEllipseItem;
+	elipseItem->setPen(pen);
+	elipseItem->setBrush(brush);
+
+	
+	std::cout << "CURRENT ELEMENT INDEX " << currentLastElementIndexInLastPolygon << std::endl;
+	std::cout << "SIze of multiwalls " << m_multiLineWalls.size() << std::endl;
+	elipseItem->setRect(m_multiLineWalls[m_multiLineWalls.size()-1].first.at(currentLastElementIndexInLastPolygon).x()-5, m_multiLineWalls[m_multiLineWalls.size()-1].first.at(currentLastElementIndexInLastPolygon).y()-5, 10, 10);
+	
+	m_mainGraphicsScene->addItem(elipseItem);
+	m_mainGraphicsScene->update();
+	m_poly << QPointF(m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon).x(), m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon).y());
+	
+	elipseItem = NULL;
+	delete elipseItem;
+
+
+
+    //m_elipseItemsVec.push_back()
+	//m_mainGraphicsScene->addItem(m_elipseItemsVec.at(m_elipseItemsVec.size()-1));
+	//m_elipseItemsVec.push_back(elipseItem);
+}
+
+
+
+void FloorPlanSegmentationGui::addLastSelectedWallLineSlot()
+{
+
+
+
+	QBrush brush;
+	brush.setColor(Qt::red);
+
+	brush.setStyle(Qt::SolidPattern);
+	QPen pen(Qt::green);
+	pen.setBrush(brush);
+	pen.setWidth(1);
+
+
+	unsigned int currentLastElementIndexInLastPolygon1;
+	unsigned int currentLastElementIndexInLastPolygon2;
+	if (m_multiLineWalls[m_multiLineWalls.size() - 1].first.size() >= 2) {
+		currentLastElementIndexInLastPolygon1  = m_multiLineWalls[m_multiLineWalls.size() - 1].first.size() - 2;
+		currentLastElementIndexInLastPolygon2  = m_multiLineWalls[m_multiLineWalls.size() - 1].first.size() - 1;
+	}
+	else {
+		return;
+	}
+	std::cout << "Last wall reconstructing part \n";
+	//std::cout << "Last point " << m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon).x() << "   " << m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon).y() << std::endl;
+	//m_multiLineWalls[0].first.at(m_multiLineWalls.size() - 1).
+
+	QGraphicsEllipseItem* elipseItem1 = new QGraphicsEllipseItem;
+	elipseItem1->setPen(pen);
+	elipseItem1->setBrush(brush);
+
+
+
+	QGraphicsEllipseItem* elipseItem2 = new QGraphicsEllipseItem;
+	elipseItem2->setPen(pen);
+	elipseItem2->setBrush(brush);
+
+
+	//std::cout << "CURRENT ELEMENT INDEX " << currentLastElementIndexInLastPolygon1 << std::endl;
+	//std::cout << "SIze of multiwalls " << m_multiLineWalls.size() << std::endl;
+	elipseItem1->setRect(m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon1).x() - 5, m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon1).y() - 5, 10, 10);
+	elipseItem2->setRect(m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon2).x() - 5, m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon2).y() - 5, 10, 10);
+
+	std::cout << "ADDED LAST SELECTED LINE \n";
+
+	m_mainGraphicsScene->addItem(elipseItem1);
+	m_mainGraphicsScene->addItem(elipseItem2);
+	m_mainGraphicsScene->update();
+	m_poly << QPointF(m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon1).x(), m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon1).y());
+	m_poly << QPointF(m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon2).x(), m_multiLineWalls[m_multiLineWalls.size() - 1].first.at(currentLastElementIndexInLastPolygon2).y());
+
+
+	drawPolygonFromSelectedPoints();
+
+	//m_multiLineWalls.first = m_poly;
+
+	elipseItem1 = NULL;
+	delete elipseItem1;
+	elipseItem2 = NULL;
+	delete elipseItem2;
+
+
+}
+
+void FloorPlanSegmentationGui::zoomDownSlot()
+{
+	if (m_previousZoomValue - 10 > 10) {
+		if (m_previousZoomValue > 100) {
+			m_previousZoomValue = 100;
+		}
+		m_previousZoomValue = m_previousZoomValue - 10;
+	}
+	zommCurrentImageSlot();
+
+}
+
+
+void FloorPlanSegmentationGui::zoomUpSlot()
+{
+	if (m_previousZoomValue +  10 <= 300) {
+		if (m_previousZoomValue < 100) {
+			m_previousZoomValue = 100;
+		}
+		m_previousZoomValue = m_previousZoomValue + 10;
+	}
+	zommCurrentImageSlot();
+
+}
+
+
+void FloorPlanSegmentationGui::zommCurrentImageSlot()
+{
+	
+
+
+	QList<QGraphicsItem*> all = m_mainGraphicsScene->items();
+
+	std::cout << "ZOOOOOOOOM" << all.size() << " \n";
+	//m_mainGraphicsScene->clear();
+	//if (all.size() > 0) {
+	for (int i = 0; i < all.size(); i++)
+	{
+		QGraphicsItem *gi = all[i];
+		m_mainGraphicsScene->removeItem(gi);
+		//delete gi;
+		m_mainGraphicsScene->update();
+	}
+	m_pixmapItem = new QGraphicsPixmapItem();
+	m_mainGraphicsScene->addItem(m_pixmapItem);
+	m_pixmapItem->setPixmap(QPixmap::fromImage(m_image));
+	m_pixmapItem->setPos(0, 0);
+
+
+	m_poly.clear();
+	for (int i = 0; i < m_elipseItemsVec.size(); ++i) {
+		m_mainGraphicsScene->removeItem(m_elipseItemsVec[i]);
+
+	}
+	for (int i = 0; i < m_elipseItemsVec.size(); ++i) {
+		//m_mainGraphicsScene->removeItem(m_elipseItemsVec[i]);
+		delete m_elipseItemsVec[i];
+	}
+	m_elipseItemsVec.clear();
+
+
+
+
+	m_mainGraphicsScene->setSceneRect(0, 0, m_image.width(), m_image.height());
+	//	m_mainGraphicsScene->clear();
+	QImage temp = m_image.copy();
+
+
+
+	std::cout << "     Initial depth state           " << temp.depth() << std::endl;;
+
+
+	if (temp.depth() != 0) {
+		if (temp.depth() == 8) {
+			cv::Mat res(temp.height(), temp.width(), CV_8UC1, (uchar*)temp.bits(), temp.bytesPerLine());
+			//cvtColor(res, res, CV_BGRA2BGR);
+			m_cvImage = res.clone();
+		}
+		else if (temp.depth() == 32) {
+			cv::Mat res(temp.height(), temp.width(), CV_8UC4, (uchar*)temp.bits(), temp.bytesPerLine());
+			//cvtColor(res, res, CV_BGRA2BGR);
+			m_cvImage = res.clone();
+
+		}
+		else if (temp.depth() == 24) {
+			cv::Mat res(temp.height(), temp.width(), CV_8UC3, (uchar*)temp.bits(), temp.bytesPerLine());
+			//cvtColor(res, res, CV_BGRA2BGR);
+			m_cvImage = res.clone();
+
+		}
+
+	}
+	
+	m_pixmapItem->setPixmap(QPixmap::fromImage(m_image));
+	m_pixmapItem->setPos(0, 0);
+
+
+	all = m_mainGraphicsScene->items();
+
+	std::cout << "After getting items " << all.size() << " \n";
+	//m_mainGraphicsScene->clear();
+	//if (all.size() > 0) {
+	for (int i = 0; i < all.size(); i++)
+	{
+		QGraphicsItem *gi = all[i];
+		m_mainGraphicsScene->removeItem(gi);
+		delete gi;
+		m_mainGraphicsScene->update();
+	}
+	//}
+
+	QGraphicsPixmapItem*   m_pixmapItem = new QGraphicsPixmapItem;//  new QGraphicsPixmapItem(/*QPixmap::fromImage(image)*/);
+
+	m_pixmapItem->setPixmap(QPixmap::fromImage(m_image));
+	m_pixmapItem->setPos(0, 0);
+	m_mainGraphicsScene->addItem(m_pixmapItem);
+
+	float scaleByX = (float)(m_previousZoomValue) / 100.0;
+	float scaleByY = (float)(m_previousZoomValue) / 100.0;
+	 m_mainGraphicsView->scale(scaleByX, scaleByY);
+	
+
+	std::string filename1 = "testHeightMapDataAutoGenerated.xml";
+	cv::FileStorage fs1(filename1, cv::FileStorage::WRITE);
+	fs1.release();
+
+
+	std::ofstream geojsonFile;
+	geojsonFile.open("example.geojson");
+	geojsonFile.close();
+	//	delete pixmapItemTmp;
+
+
+	m_multiLineWalls.clear();
+	m_multiPoints.clear();
+	m_multiPolygonRooms.clear();
+
+
+
+
+
+
+
+
+
 }
 
 void FloorPlanSegmentationGui::setSelectedImagePath() {
@@ -1851,6 +2240,7 @@ void FloorPlanSegmentationGui::setSelectedImagePath() {
 		m_pixmapItem->setPos(0, 0);
 		m_mainGraphicsScene->addItem(m_pixmapItem);
 
+		//m_mainGraphicsView->scale(4, 4);
 
 		std::string filename1 = "testHeightMapDataAutoGenerated.xml";
 		cv::FileStorage fs1(filename1, cv::FileStorage::WRITE);
@@ -2035,7 +2425,7 @@ void  FloorPlanSegmentationGui::runSegmentation() {
 		m_pixmapItem->setPos(0, 0);
 		
 
-
+		
 		
 	//	cv::imshow("initimg", initialMat);		
 		//cv::waitKey(0); 
@@ -2052,7 +2442,7 @@ void FloorPlanSegmentationGui::runHeightMapGeneration()
 	}
 	cv::namedWindow("HeightMap1");
 	cv::Mat heightmapImage = cv::imread("resultImageFull.png");
-
+	
 	QString fileName = "resultImageFull.png";
 	
 
@@ -2061,6 +2451,50 @@ void FloorPlanSegmentationGui::runHeightMapGeneration()
 	
 
 	cv::Mat maskImg = cv::imread(fileName1.toStdString());
+	cv::Mat grayImg;
+	cv::cvtColor(maskImg, grayImg, CV_BGR2GRAY);
+
+
+
+	cv::medianBlur(grayImg, grayImg, 15);
+
+	unsigned int minPointX = grayImg.cols - 1;
+	unsigned int maxPointX = 0;
+	unsigned int minPointY = grayImg.rows - 1;
+	unsigned int maxPointY = 0;
+	for (int i = 0; i < grayImg.rows; ++i) {
+		for (int j = 0; j < grayImg.cols; ++j) {
+			if (grayImg.at<uchar>(i, j) != 0 && i < minPointY) {
+				minPointY = i;
+			}
+			if (grayImg.at<uchar>(i, j) != 0 && j < minPointX) {
+				minPointX = j;
+			}
+			if (grayImg.at<uchar>(i, j) != 0 && i > maxPointY) {
+				maxPointY = i;
+			}
+			if (grayImg.at<uchar>(i, j) != 0 && j > maxPointX) {
+				maxPointX = j;
+			}
+		}
+	}
+	cv::Rect rectBound;
+	rectBound.x = minPointX;
+	rectBound.y = minPointY;
+	rectBound.width = maxPointX - minPointX;
+	rectBound.height = maxPointY - minPointY;
+
+
+
+
+
+	cv::cvtColor(grayImg, grayImg, CV_GRAY2BGR);
+	cv::rectangle(grayImg, rectBound, cv::Scalar(0, 255, 0), 2);
+	cv::imshow("grayImg", grayImg);
+	cv::waitKey(10);
+
+
+
 	cv::Mat resContourImage;
 	findOuterContour(maskImg, resContourImage);
 
@@ -2074,12 +2508,21 @@ void FloorPlanSegmentationGui::runHeightMapGeneration()
 	m_contourImage = resContourImage.clone();
 
 
-	if (m_contourShowingButton->isChecked()) {
-		heightmapImage = heightmapImage + resContourImage;
-	}
-
+//	if (m_contourShowingButton->isChecked()) {
+		//heightmapImage = heightmapImage + resContourImage;
+		cv::rectangle(heightmapImage, rectBound, cv::Scalar(0, 255, 0), 2);
+	//}
+	float realHeight = rectBound.height * 0.5;
+	float realWidth = rectBound.width * 0.5;
+	cv::putText(heightmapImage, std::to_string(realHeight), cv::Point(rectBound.x - 100, rectBound.y + 100),CV_FONT_HERSHEY_COMPLEX, 1,cv::Scalar(255, 0, 0), 2);
+	cv::putText(heightmapImage, std::to_string(realWidth), cv::Point(rectBound.x + 100, rectBound.y - 100), CV_FONT_HERSHEY_COMPLEX, 1, cv::Scalar(255, 0, 0), 2);
+	cv::Mat heightmapImageSave;
+	cv::cvtColor(heightmapImage, heightmapImageSave, CV_BGR2RGB);
+	cv::imwrite("HeightMapImageWithCoverage.png", heightmapImageSave);
+	
 	QImage image(heightmapImage.data, heightmapImage.cols, heightmapImage.rows, QImage::Format_RGB888);
-
+	//Artashes Last change
+	
    QImage imageTr(heightmapImage.data, heightmapImage.cols, heightmapImage.rows, QImage::Format_RGBA8888);
    QImage imageTr1 = QImage(heightmapImage.cols, heightmapImage.rows, QImage::Format_RGBA8888);
 
@@ -2103,7 +2546,7 @@ void FloorPlanSegmentationGui::runHeightMapGeneration()
 	   }
 	}
 
-	
+   m_image = imageTr1.copy();
     
 //	QImage image(fileName);
 	//image = image.scaled(image.width()/1.3,image.height()/1.3);
@@ -2339,13 +2782,13 @@ void FloorPlanSegmentationGui::getSelectedPoints()
 
 
 
-		/*if (m_wallDataWidget->exec() == QDialog::Accepted) {
+		if (m_wallDataWidget->exec() == QDialog::Accepted) {
 			std::cout << "Getting height map parameters from GUi\n";
 			m_rayFreqForHeightMap = m_rayFreqSpinBox->value();
 			m_countOfRaysForHeightMap = m_countOfRaysSpinBox->value();
 			m_pixelPerMeterScaleParameterForHeightMap = m_pixelPerMeterScaleSpinBox->value();
 
-		}*/
+		}
 
 
 
@@ -2370,7 +2813,7 @@ void FloorPlanSegmentationGui::getSelectedPoints()
 	else {
 		elipseItem->setRect(tmpSelectedPoint.x-5, tmpSelectedPoint.y-5, 10, 10);
 	}
-	m_mainGraphicsScene->addItem(elipseItem);
+    m_mainGraphicsScene->addItem(elipseItem);
 	m_elipseItemsVec.push_back(elipseItem);
 	//	m_mainGraphicsScene->addEllipse(100, 100, 10, 10, pen, brush);
 //if (m_poly.size() == 0 && m_indexOfPolygonPoint > 0) {
@@ -2430,6 +2873,11 @@ void FloorPlanSegmentationGui::drawPolygonFromSelectedPoints()
 
 
 
+			m_initialGeojsonPointCoord.first = m_poly[m_poly.size() - 2].x();
+			m_initialGeojsonPointCoord.second = m_poly[m_poly.size() - 2].y();
+
+			m_secondGeojsonPointCoord.first = m_poly[m_poly.size() - 1].x();
+			m_secondGeojsonPointCoord.second = m_poly[m_poly.size() - 1].y();
 
 
 			std::stringstream out;
@@ -2584,11 +3032,13 @@ void FloorPlanSegmentationGui::drawPolygonFromSelectedPoints()
 		tmpMaterialDataStr.m_materialName = m_materialNameComboBox->currentText().toStdString();
 		tmpMaterialDataStr.m_materialTickness = std::atoi(m_materialTicknessSpinBox->text().toStdString().c_str());
 		tmpMaterialDataStr.m_materialType = m_materialTypeComboBox->currentText().toStdString();
+		tmpMaterialDataStr.m_currentWallHeight = m_wallHeightSpinBox->value();
 		tmpMaterialDataPair.second = tmpMaterialDataStr;
 
 		tmpMaterialDataPair.first = m_poly;
 		std::cout << tmpMaterialDataStr.m_materialID << "     " << tmpMaterialDataStr.m_materialName << "     " << tmpMaterialDataStr.m_materialTickness << "      " << tmpMaterialDataStr.m_materialType << std::endl;
 		m_multiLineWalls.push_back(tmpMaterialDataPair);
+		
 		coloringOfSelectedWalls();
 		m_poly.clear();
 
@@ -2702,7 +3152,7 @@ bool FloorPlanSegmentationGui::parseHeightMapTxtFile(cv::Mat& resHeightMap, cv::
 	std::string line;
 	std::ifstream myfile("rfMapFull.txt");
 	std::ifstream myfileSINR("sinrData.txt");
-
+	
 	std::vector<std::vector<int>> heighMapFileData;
 	bool countOfColumscalculated = false;
 	while (std::getline(myfile, line)) {
@@ -2767,7 +3217,7 @@ bool FloorPlanSegmentationGui::parseHeightMapTxtFile(cv::Mat& resHeightMap, cv::
 
 	}
 
-	
+	std::cout << "Parse height map image  before \n " << std::endl;
 	resSINRMap = cv::Mat(number_of_lines, countOfColums, CV_32FC1);
 	if (resSINRMap.cols != resHeightMap.cols || resSINRMap.rows != resHeightMap.rows) {
 		return false;
@@ -2777,9 +3227,12 @@ bool FloorPlanSegmentationGui::parseHeightMapTxtFile(cv::Mat& resHeightMap, cv::
 			resSINRMap.at<float>(i, j) = sinrFileData[i][j];
 		}
 	}
+	std::cout << "Parse height map image \n " << std::endl;
 
 	m_heightMapInitImage = resHeightMap.clone();
 	m_sinrInitImage = resSINRMap.clone();
+//	cv::imshow("HeightMapImage", m_heightMapImage);
+//	cv::waitKey(0);
 	return true;
 
 //	std::cout << "Number of lines in text file: " << number_of_lines<<"\n";
@@ -3005,11 +3458,6 @@ void FloorPlanSegmentationGui::generateGeojsonFile()
 	std::string line4 = "{ \"type\": \"Feature\", \"properties\" : { \"OBJECTID\": 1, \"SHAPE_Length\" : 0.00 }, \"geometry\" : { \"type\": \"MultiPolygon\", \"coordinates\" : [[[";
 
 
-
-
-
-
-
 	float initialLongttitude = std::atof(m_longtitudeSpinBox1->text().toStdString().c_str());
 	float initialLatitude = std::atof(m_latitudeSpinBox1->text().toStdString().c_str());
 
@@ -3118,6 +3566,25 @@ void FloorPlanSegmentationGui::generateGeojsonFile()
 
 void FloorPlanSegmentationGui::generateGeojsonFileForWalls()
 {
+	std::ofstream layoutTextFile;
+	layoutTextFile.open("exampleLayoutFile.lay");
+	layoutTextFile << "[info]\n";
+	layoutTextFile << "format = cart\n";
+	layoutTextFile << "version = 1.3\n";
+	layoutTextFile << "type = indoor\n";
+	layoutTextFile << "\n";
+	layoutTextFile << "[points]\n";
+	
+
+	std::multimap<int, std::pair<int, double>> segments;
+	int indexOfCurrentPoint = -1;
+	std::string fullTextForPointsPositions = "";
+	std::string fullTextForLines = "";
+	fullTextForPointsPositions += std::to_string(indexOfCurrentPoint) + " = " + "(1.0, 1.0)\n";
+	layoutTextFile << fullTextForPointsPositions;
+
+	
+
 
 	std::cout << "Geojson Generation \n";
 	if ( m_multiLineWalls.size() == 0  ||  m_multiLineWalls[0].first.size() < 2) {
@@ -3151,10 +3618,58 @@ void FloorPlanSegmentationGui::generateGeojsonFileForWalls()
 	float realDistance;
 	findRotationAngleAndDistance(initialLatitude, initialLongttitude, secondLatitude, secondLongttitude, rotationAngle, realDistance);
 
-
-	float euqlideanDist = std::sqrt((m_multiLineWalls[0].first[0].x() - m_multiLineWalls[0].first[1].x())*(m_multiLineWalls[0].first[0].x() - m_multiLineWalls[0].first[1].x()) +
+	
+	/*float euqlideanDist = std::sqrt((m_multiLineWalls[0].first[0].x() - m_multiLineWalls[0].first[1].x())*(m_multiLineWalls[0].first[0].x() - m_multiLineWalls[0].first[1].x()) +
 		(m_multiLineWalls[0].first[0].y() - m_multiLineWalls[0].first[1].y())*(m_multiLineWalls[0].first[0].y() - m_multiLineWalls[0].first[1].y()));
+	float scalePerOneMeter = euqlideanDist / realDistance;*/
+
+	float euqlideanDist = std::sqrt((m_initialGeojsonPointCoord.first - m_secondGeojsonPointCoord.first)*(m_initialGeojsonPointCoord.first - m_secondGeojsonPointCoord.first) +
+		(m_initialGeojsonPointCoord.second - m_secondGeojsonPointCoord.second)*(m_initialGeojsonPointCoord.second - m_secondGeojsonPointCoord.second) );
 	float scalePerOneMeter = euqlideanDist / realDistance;
+
+
+
+
+
+
+	int currentX = m_multiLineWalls[0].first[1].x();
+	int currentY = m_multiLineWalls[0].first[1].y();
+
+	float earhRadius = 6378137;
+    
+
+	int distX = currentX - m_multiLineWalls[0].first[0].x();
+	int distY = -(currentY - m_multiLineWalls[0].first[0].y());
+
+
+
+
+	float newLong;// = initialLongttitude + longtitudeX;
+	float newLat;// = initialLatitude + lantitudeY;
+
+	float distXMeter = (float)distX / (float)scalePerOneMeter;
+	float distYMeter = (float)distY / (float)scalePerOneMeter;
+
+
+	indexOfCurrentPoint -= 1;
+	fullTextForPointsPositions = std::to_string(indexOfCurrentPoint) + " = " + "(" + std::to_string(distXMeter) + "," +  std::to_string(distYMeter) + ")\n";
+    layoutTextFile << fullTextForPointsPositions;
+
+	std::cout << "Distance from intial point " << distXMeter << "    " << distYMeter << std::endl;
+	
+	
+
+	std::multimap<int, int>::iterator itSeg;
+	segments.insert(std::pair<int, std::pair<int, double>>(indexOfCurrentPoint+1, std::pair<int, double>(indexOfCurrentPoint, m_wallHeightSpinBox->value())));
+	//segments.insert(std::pair<int, int>(-1, -10));
+	//segments.insert(std::pair<int, int>(-2, -20));
+	//segments.insert(std::pair<int, int>(-1, -12));
+	//for (std::multimap<int, int>::iterator it = segments.begin(); it != segments.end(); it++)
+	//	std::cout <<"MAP SEGMENTS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    "<< it->first << " :: " << it->second << std::endl;
+	//std::cout << "MAps initial points !!!!!!!!!!!!!!!!!!!!!!!!!!!" << itSeg->first << std::endl;
+	//layoutTextFile.close();
+
+
 
 	std::ofstream scalePerMeterFile;
 	scalePerMeterFile.open("scalePerMeter.txt");
@@ -3199,6 +3714,9 @@ void FloorPlanSegmentationGui::generateGeojsonFileForWalls()
 	lineForFirstPoint = lineForFirstPoint + std::to_string(long(m_multiLineWalls[0].second.m_materialTickness));
 	lineForFirstPoint = lineForFirstPoint + ", \"Material Name\": ";
 	lineForFirstPoint = lineForFirstPoint +  '"' +  m_multiLineWalls[0].second.m_materialName + '"';
+	lineForFirstPoint = lineForFirstPoint + ", \"Wall Height\": ";
+	lineForFirstPoint = lineForFirstPoint + '"' + std::to_string(m_multiLineWalls[0].second.m_currentWallHeight) + '"';
+
 
 	lineForFirstPoint = lineForFirstPoint + ", \"SHAPE_Length\" : 0.00 }, \"geometry\" : { \"type\": \"MultiLineString\", \"coordinates\" : [[";
 	
@@ -3241,17 +3759,34 @@ void FloorPlanSegmentationGui::generateGeojsonFileForWalls()
 			int currentY = m_multiLineWalls[k].first[i].y();
 
 			float earhRadius = 6378137;
+			//std::cout << "Current intial selected point geojson " << m_initialGeojsonPointCoord.first << "     " << m_initialGeojsonPointCoord.second << std::endl;
+			//std::cout << "Current  polylines first  point geojson " << m_multiLineWalls[0].first[0].x() << "     " << m_multiLineWalls[0].first[0].y() << std::endl;
 
 
 
-			int distX = currentX - m_multiLineWalls[0].first[0].x();
-			int distY = -(currentY - m_multiLineWalls[0].first[0].y());
+
+			int distX = currentX -     m_multiLineWalls[0].first[0].x();
+			int distY = -(currentY -  m_multiLineWalls[0].first[0].y());
 
 			float newLong;// = initialLongttitude + longtitudeX;
 			float newLat;// = initialLatitude + lantitudeY;
 
 			float distXMeter = (float)distX / (float)scalePerOneMeter;
 			float distYMeter = (float)distY / (float)scalePerOneMeter;
+
+
+
+			indexOfCurrentPoint -= 1;
+			fullTextForPointsPositions = std::to_string(indexOfCurrentPoint) + " = " + "(" + std::to_string(distXMeter) + "," + std::to_string(distYMeter) + ")\n";
+			layoutTextFile << fullTextForPointsPositions;
+
+			segments.insert(std::pair<int, std::pair<int, double>>(indexOfCurrentPoint + 1, std::pair<int, double>(indexOfCurrentPoint, m_wallHeightSpinBox->value())));
+
+
+
+
+			std::cout << "Current point distance in meters " << distXMeter << "   " << distYMeter << std::endl;
+
 			calculateLatAndLong(initialLatitude, initialLongttitude, distXMeter, distYMeter, newLat, newLong);
 			if (i == 0) {
 				lastCalcPointLatitude = newLat;
@@ -3274,6 +3809,10 @@ void FloorPlanSegmentationGui::generateGeojsonFileForWalls()
 			lineForCurrentPoint = lineForCurrentPoint + std::to_string(long(m_multiLineWalls[k].second.m_materialTickness));
 			lineForCurrentPoint = lineForCurrentPoint + ", \"Material Name\": ";
 			lineForCurrentPoint = lineForCurrentPoint + '"' +  m_multiLineWalls[k].second.m_materialName + '"';
+			lineForCurrentPoint = lineForCurrentPoint + ", \"Wall Height\": ";
+			lineForCurrentPoint = lineForCurrentPoint + '"' + std::to_string(m_multiLineWalls[k].second.m_currentWallHeight) + '"';
+
+		
 
 			lineForCurrentPoint = lineForCurrentPoint + ", \"SHAPE_Length\" : 0.00 }, \"geometry\" : { \"type\": \"MultiLineString\", \"coordinates\" : [[";
 			/*End of new added stuff*/
@@ -3295,21 +3834,100 @@ void FloorPlanSegmentationGui::generateGeojsonFileForWalls()
 			lastCalcPointLongtitude = newLong;
 
 
-			//		std::string tmpLine = "[" + std::to_string(newLong) + "," + " " + std::to_string(newLat) + "]";
-				//	if (i != m_poly.size() - 1) {
-					//	tmpLine = tmpLine + ",";
-				//	}
-				//	std::cout << "Final line before writng into filee " << tmpLine << std::endl;
-				//	myfile << tmpLine << "\n";
-					////	initialLongttitude = newLong;
-					////	initialLatitude = newLat;
+
 
 
 
 		}
 	}
 
+	layoutTextFile << "\n";
+	layoutTextFile << "[segments]\n";
+	std::string fullTextForSegments;
+	unsigned int currentSegmentIndex = 1;
+	int lastIndexForSegment;
+	int firstIndexForSegment;
+	unsigned int indexOfCurrentSegment = 0;
+	int firstIndexInSegment;
+	int secondIndexInSegment;
+	double heightOfCurrentWall;
+	for (std::multimap<int, std::pair<int,double>>::iterator it = segments.begin(); it != segments.end(); it++) {
+		//	std::cout <<"MAP SEGMENTS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    "<< it->first << " :: " << it->second << std::endl;
+		firstIndexInSegment = it->first;
+		secondIndexInSegment = it->second.first;
+		
+		heightOfCurrentWall = it->second.second;
+		if (currentSegmentIndex == 1) {
+			lastIndexForSegment = secondIndexInSegment;
+		}
+		fullTextForSegments = "";
+		fullTextForSegments += std::to_string(currentSegmentIndex);
+		++currentSegmentIndex;
+		fullTextForSegments += " = {'name' : 'WALL' , 'connect': ";
+		std::string currentSegmentData = "[" + std::to_string(firstIndexInSegment) + ", " + std::to_string(secondIndexInSegment) + "], 'z': [0.0, " + std::to_string(heightOfCurrentWall) + "]}";
+		fullTextForSegments += currentSegmentData;
+		layoutTextFile << fullTextForSegments;
+		layoutTextFile << "\n";
+	}
 
+
+	fullTextForSegments = "";
+	fullTextForSegments += std::to_string(currentSegmentIndex);
+	fullTextForSegments += " = {'name' : 'WALL' , 'connect': ";
+	std::string currentSegmentData = "[" + std::to_string(lastIndexForSegment) + ", " + std::to_string(firstIndexInSegment) + "], 'z': [0.0, " + std::to_string(heightOfCurrentWall) + "]}";
+	fullTextForSegments += currentSegmentData;
+	layoutTextFile << fullTextForSegments;
+	layoutTextFile << "\n";
+
+
+
+
+
+	layoutTextFile << "\n";
+	layoutTextFile << "[files]\n";
+	layoutTextFile << "furniture =\n";
+	layoutTextFile << "\n";
+	layoutTextFile << "[slabs]\n";
+
+	std::string currentMaterialData = "WALL = { 'color': 'grey20', 'linewidth' : 3, 'lthick' : [0.07], 'lmatname' : ['BRICK'] }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "_AIR = { 'color': 'white', 'linewidth' : 1, 'lthick' : [0.02], 'lmatname' : ['AIR'] }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "WOOD = { 'color': 'maroon', 'linewidth' : 2, 'lthick' : [0.04], 'lmatname' : ['WOOD'] }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "METAL = { 'color': 'black', 'linewidth' : 4, 'lthick' : [0.1], 'lmatname' : ['METAL'] }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "PARTITION = { 'color': 'grey80', 'linewidth' : 4, 'lthick' : [0.1], 'lmatname' : ['PLASTER'] }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "AIR = { 'color': 'white', 'linewidth' : 1, 'lthick' : [0.02], 'lmatname' : ['AIR'] }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "CEIL = { 'color': 'grey20', 'linewidth' : 1, 'lthick' : [0.1], 'lmatname' : ['REINFORCED_CONCRETE'] }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "FLOOR = { 'color': 'grey40', 'linewidth' : 1, 'lthick' : [0.1], 'lmatname' : ['REINFORCED_CONCRETE'] }";
+	layoutTextFile << currentMaterialData << "\n";
+	layoutTextFile << "\n";
+	currentMaterialData = "[materials]";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "BRICK = { 'mur': (1 + 0j), 'epr' : (4.09999990463 + 0j), 'roughness' : 0.0, 'sigma' : 0.300000011921 }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "AIR = { 'mur': (1 + 0j), 'epr' : (1 + 0j), 'roughness' : 0.0, 'sigma' : 0.0 }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "WOOD = { 'mur': (1 + 0j), 'epr' : (2.83999991417 - 0.019999999553j), 'roughness' : 0.0, 'sigma' : 0.0 }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "PLASTER = { 'mur': (1 + 0j), 'epr' : (8 + 0j), 'roughness' : 0.0, 'sigma' : 0.038 }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "METAL = { 'mur': (1 + 1j), 'epr' : (-1 - 1j), 'roughness' : 0.0, 'sigma' : 1000.0 }";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "REINFORCED_CONCRETE = { 'sigma': 3.0, 'roughness' : 0.0, 'epr' : (8.69999980927 + 0j), 'mur' : (1 + 0j) }";
+	layoutTextFile << currentMaterialData << "\n";
+	layoutTextFile << "\n";
+	currentMaterialData = "[indoor]";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "zceil = 3";
+	layoutTextFile << currentMaterialData << "\n";
+	currentMaterialData = "zfloor = 0";
+	layoutTextFile << currentMaterialData << "\n";
+	layoutTextFile.close();
 	//myfile << line6 << "\n";
 	myfile << line7 << "\n";
 	myfile.close();
@@ -3478,6 +4096,40 @@ void FloorPlanSegmentationGui::generateGeojsonFileForRooms()
 
 void FloorPlanSegmentationGui::generateGeojsonFileForAccessPoints()
 {
+
+
+	std::ofstream iniTextFile;
+	iniTextFile.open("exampleIniFile.ini");
+	std::string iniCurrentString;
+	iniCurrentString = "[grid]";
+	iniTextFile << iniCurrentString << "\n";
+	iniCurrentString = "nx ="  + std::to_string(m_cvImage.cols/2);
+	iniTextFile << iniCurrentString << "\n";
+	iniCurrentString = "ny =" + std::to_string(m_cvImage.rows / 2);;
+	iniTextFile << iniCurrentString << "\n";
+	iniCurrentString = "boundary = [20,0,30,20]";
+	iniTextFile << iniCurrentString << "\n";
+	iniCurrentString = "zgrid = 1.2";
+	iniTextFile << iniCurrentString << "\n";
+	iniCurrentString = "mode = full";
+	iniTextFile << iniCurrentString << "\n";
+	iniCurrentString = "file = 'points.ini'";
+	iniTextFile << iniCurrentString << "\n";
+	iniTextFile << "\n";
+	iniCurrentString = "[layout]";
+	iniTextFile << iniCurrentString << "\n";
+	iniCurrentString = "filename = exampleLayoutFile.lay\n";
+	iniTextFile << iniCurrentString << "\n";
+	iniCurrentString = "[ap]";
+	iniTextFile << iniCurrentString << "\n";
+	//iniTextFile.close();
+
+
+
+
+
+
+
 	std::cout << "Fucntgion call start !!!!!!!!!!!!!! \n";
 	if (m_multiAccessPoints.size() == 0 || m_multiLineWalls.size() == 0 || m_multiLineWalls[0].first.size() < 2) {
 		return;
@@ -3564,7 +4216,14 @@ void FloorPlanSegmentationGui::generateGeojsonFileForAccessPoints()
 			float distXMeter = (float)distX / (float)scalePerOneMeter;
 			float distYMeter = (float)distY / (float)scalePerOneMeter;
 			calculateLatAndLong(initialLatitude, initialLongttitude, distXMeter, distYMeter, newLat, newLong);
-		
+		     
+
+			iniCurrentString = std::to_string(k) + " = {'name':'" + m_multiAccessPoints[k].second.m_accessPointType + "','wstd':'ieee80211b','p':(" + std::to_string(distXMeter) + "," + std::to_string(distYMeter) + ","
+			+	std::to_string(m_accessPointHeightSpinBox->value()) + "),'PtdBm':0,'chan':[11],'on':True,'ant':'Omni','phideg':90}";
+			iniTextFile << iniCurrentString << "\n";
+
+
+
 
 			std::string tmpLine = "[" + std::to_string(newLong) + "," + " " + std::to_string(newLat) + "]";
 			tmpLine = tmpLine + "}}";
@@ -3590,7 +4249,14 @@ void FloorPlanSegmentationGui::generateGeojsonFileForAccessPoints()
 			myfile << line7 << "\n";
 		}*/
 	}
-
+	iniTextFile << "\n";
+	iniTextFile << "[rx]\n";
+	iniTextFile << "temperaturek = 300 \n";
+	iniTextFile << "noisefactordb = 0 \n";
+	iniTextFile << "\n";
+	iniTextFile << "[show] \n";
+	iniTextFile << "show = True \n";
+	iniTextFile.close();
 
 	//myfile << line6 << "\n";
 	myfile << "]}" << "\n";
@@ -3643,8 +4309,16 @@ void FloorPlanSegmentationGui::drawHeightMapValue()
 		cv::Mat heightMap;
 		cv::Mat sinrMap;
 		if (m_DbmShowingButton->isChecked()  /*&&  parseHeightMapTxtFile(heightMap,sinrMap) */) {
+
+			if (m_heightMapInitImage.cols == 0 || m_heightMapInitImage.rows == 0) {
+				cv::Mat resHeightMapImage;
+				cv::Mat resSinrMapImage;
+				parseHeightMapTxtFile(resHeightMapImage, resSinrMapImage);
+			}
+
+
 			std::cout << "CALLED DBM SHOW BUTTON \n";
-			if (m_heightMapInitImage.rows == m_image.height() && m_heightMapInitImage.cols == m_image.width() ) {
+			if ( m_heightMapInitImage.rows == m_image.height() && m_heightMapInitImage.cols == m_image.width() ) {
 				std::cout << "FINAL HEIGHTMAPPPPPPPPPPPPPPPPPPP \n";
 				//m_graphicsTextItem->setRect(tmpMovePoint.x(), tmpMovePoint.y(),10,10);
 				tmpPositon = QString(std::to_string(m_heightMapInitImage.at<int>(tmpMovePoint.y(), tmpMovePoint.x())).c_str()) + " Dbm";
